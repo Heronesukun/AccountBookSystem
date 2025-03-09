@@ -18,16 +18,6 @@ const router = createRouter({
       children:[
 
       ]
-    },
-    {
-      path:"/LedgerDetail",
-      component:()=>import("@/views/LedgerDetail.vue")
-      // children:[
-      //   {
-      //     path:"/LedgerDetail/:id",
-      //     component:()=>import("@/views/LedgerDetail.vue")
-      //   }
-      // ]
     }
   ]
 })
