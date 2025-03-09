@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  redis:
+    host: 47.98.59.0
+    port: 6379
+    password: hanbing147@A
+  datasource:
+    druid:
+      username: root
+      password: hanbing147@A
+      url: jdbc:mysql://47.98.59.0:3306/fm_project
+      driver-class-name: com.mysql.cj.jdbc.Driver
+mybatis:
+  type-aliases-package: com.fm.pojo
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath*:mapper/*Mapper.xml
+
+  dict-cache-pre: DICT_
+  dict-cache-clear-thread-pool-name: dictCacheClearThreadPoolName
