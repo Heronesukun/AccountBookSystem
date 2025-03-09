@@ -154,7 +154,7 @@ function formatDate(date) {
 
 // 查看账本
 function viewNotebook(bookId) {
-  router.push(`/notebook/${username.value}/${bookId}`);
+  router.push(`/LedgerDetail?bookId=${bookId}`);
 }
 
 // 修改账本

@@ -18,6 +18,14 @@ const router = createRouter({
       children:[
 
       ]
+    },
+    {
+      path:"/LedgerDetail",
+      component:()=>import("@/views/LedgerDetail.vue")
+    },
+    {
+      path:"/notebook/:username/:id",  // 新增路由，支持从home.vue跳转
+      component:()=>import("@/views/LedgerDetail.vue")
     }
   ]
 })
