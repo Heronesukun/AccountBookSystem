@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fm.books.mapper.CategoryMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.fm.pojo.Category">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="level" property="level" jdbcType="INTEGER"/>
+        <result column="icon" property="icon" jdbcType="VARCHAR"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="book_id" property="bookId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="VARCHAR"/>
+        <result column="is_default" property="isDefault" jdbcType="INTEGER"/>
+        <result column="is_system" property="isSystem" jdbcType="INTEGER"/>
+        <result column="is_deleted" property="isDeleted" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <!-- 通用列 -->
+    <sql id="Base_Column_List">
+        id, name, type, parent_id, level, icon, sort_order, book_id, user_id, 
+        is_default, is_system, is_deleted, created_at, updated_at
+    </sql>
+    
+    <!-- 添加分类 -->
+    <insert id="insertCategory" parameterType="com.fm.pojo.Category" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fm_category (
+            name, type, parent_id, level, icon, sort_order, book_id, user_id, 
+            is_default, is_system, is_deleted
+        ) VALUES (
+            #{name}, #{type}, #{parentId}, #{level}, #{icon}, #{sortOrder}, #{bookId}, #{userId}, 
+            #{isDefault}, #{isSystem}, #{isDeleted}
+        )
+    </insert>
+    
+    <!-- 根据ID查询分类 -->
+    <select id="selectCategoryById" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM fm_category
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 查询所有分类 -->
+    <select id="selectAllCategories" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM fm_category
+        WHERE book_id = #{bookId} AND user_id = #{userId} AND is_deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+    
+    <!-- 查询一级分类 -->
+    <select id="selectParentCategories" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM fm_category
+        WHERE book_id = #{bookId} AND user_id = #{userId} 
+        AND parent_id IS NULL AND level = 1 AND type = #{type} AND is_deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+    
+    <!-- 查询二级分类 -->
+    <select id="selectChildCategories" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List" />
+        FROM fm_category
+        WHERE book_id = #{bookId} AND user_id = #{userId} 
+        AND parent_id = #{parentId} AND level = 2 AND is_deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+    
+    <!-- 更新分类信息 -->
+    <update id="updateCategory" parameterType="com.fm.pojo.Category">
+        UPDATE fm_category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="level != null">level = #{level},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            <if test="isSystem != null">is_system = #{isSystem},</if>
+        </set>
+        WHERE id = #{id} AND user_id = #{userId} AND is_deleted = 0
+    </update>
+    
+    <!-- 逻辑删除分类 -->
+    <update id="deleteCategory">
+        UPDATE fm_category
+        SET is_deleted = 1
+        WHERE id = #{id} AND user_id = #{userId} AND is_deleted = 0
+    </update>
+    
+    <!-- 批量逻辑删除分类 -->
+    <update id="batchDeleteCategories">
+        UPDATE fm_category
+        SET is_deleted = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND user_id = #{userId} AND is_deleted = 0
+    </update>
+    
+</mapper>

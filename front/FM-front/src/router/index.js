@@ -9,8 +9,9 @@ const router = createRouter({
       component:()=>import("@/views/login.vue")
     },
     {
-      path:"/register",
-      component:()=>import("@/views/register.vue")
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/Register.vue')
     },
     {
       path:"/home",
@@ -26,6 +27,12 @@ const router = createRouter({
     {
       path:"/notebook/:username/:id",  // 新增路由，支持从home.vue跳转
       component:()=>import("@/views/LedgerDetail.vue")
+    },
+    {
+      path:"/account/:bookId",  // 添加账户管理页面路由
+      name: "account",
+      component:()=>import("@/views/AccountManagement.vue"),
+      props: true
     }
   ]
 })
@@ -56,4 +63,5 @@ router.beforeEach(async  (to, from) => {
     return true;
   }
 })
+
 export default router

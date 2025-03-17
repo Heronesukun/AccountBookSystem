@@ -2,53 +2,43 @@
   <div class="sidebar">
     <!-- 记一笔按钮 -->
     <div class="add-record">
-      <button class="add-record-btn" @click="openRecordDrawer">记一笔</button>
+      <el-button type="primary" class="add-record-btn" @click="openRecordDrawer" size="large">记一笔</el-button>
     </div>
 
     <!-- 主导航 -->
-    <div class="main-nav">
-      <div
-          v-for="item in mainNavItems"
-          :key="item.id"
-          :class="['nav-item', { active: activePage === item.id }]"
-          @click="changePage(item.id)"
-      >
+    <el-menu
+      :default-active="activePage"
+      class="el-menu-vertical"
+      @select="changePage"
+      :collapse="false"
+      background-color="#f5f7fa"
+      text-color="#303133"
+      active-text-color="#409EFF"
+    >
+      <!-- 主导航项 -->
+      <el-menu-item v-for="item in mainNavItems" :key="item.id" :index="item.id">
         <span class="nav-icon">{{ item.icon }}</span>
-        <span class="nav-text">{{ item.name }}</span>
-      </div>
-    </div>
+        <span>{{ item.name }}</span>
+      </el-menu-item>
 
-    <!-- 分类标签折叠菜单 -->
-    <div class="category-menu">
-      <div class="category-header" @click="toggleCategoryMenu">
-        <span class="nav-icon">🏷️</span>
-        <span class="nav-text">分类标签</span>
-        <span class="nav-icon-right">{{ categoryMenuOpen ? '▼' : '▶' }}</span>
-      </div>
-
-      <div v-if="categoryMenuOpen" class="category-submenu">
-        <div
-            v-for="item in categoryItems"
-            :key="item.id"
-            :class="['nav-item', { active: activePage === item.id }]"
-            @click="changePage(item.id)"
-        >
+      <!-- 分类标签折叠菜单 -->
+      <el-sub-menu index="category">
+        <template #title>
+          <span class="nav-icon">🏷️</span>
+          <span>分类标签</span>
+        </template>
+        <el-menu-item v-for="item in categoryItems" :key="item.id" :index="item.id">
           <span class="nav-icon">{{ item.icon }}</span>
-          <span class="nav-text">{{ item.name }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 设置选项 -->
-    <div class="settings-nav">
-      <div
-          :class="['nav-item', { active: activePage === 'settings' }]"
-          @click="changePage('settings')"
-      >
+          <span>{{ item.name }}</span>
+        </el-menu-item>
+      </el-sub-menu>
+      
+      <!-- 设置选项 -->
+      <el-menu-item index="settings" class="settings-nav">
         <span class="nav-icon">⚙️</span>
-        <span class="nav-text">设置</span>
-      </div>
-    </div>
+        <span>设置</span>
+      </el-menu-item>
+    </el-menu>
   </div>
 </template>
 
@@ -63,7 +53,6 @@ export default {
   },
   data() {
     return {
-      categoryMenuOpen: false,
       mainNavItems: [
         { id: 'home', name: '首页', icon: '🏠' },
         { id: 'transactions', name: '流水', icon: '📝' },
@@ -84,9 +73,6 @@ export default {
     },
     openRecordDrawer() {
       this.$emit('open-record-drawer');
-    },
-    toggleCategoryMenu() {
-      this.categoryMenuOpen = !this.categoryMenuOpen;
     }
   }
 };
@@ -94,51 +80,22 @@ export default {
 
 <style scoped>
 .sidebar {
-  width: 220px;
-  background-color: #f5f7fa;
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px 10px;
 }
 
 .add-record {
-  margin-bottom: 30px;
+  padding: 16px;
 }
 
 .add-record-btn {
   width: 100%;
-  padding: 12px;
-  background-color: #409eff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
 }
 
-.add-record-btn:hover {
-  background-color: #66b1ff;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.nav-item:hover {
-  background-color: #e6f1fc;
-}
-
-.nav-item.active {
-  background-color: #ecf5ff;
-  color: #409eff;
+.el-menu-vertical {
+  border-right: none;
+  flex-grow: 1;
 }
 
 .nav-icon {
@@ -146,37 +103,17 @@ export default {
   font-size: 18px;
 }
 
-.nav-text {
-  flex-grow: 1;
-}
-
-.nav-icon-right {
-  font-size: 12px;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.category-header:hover {
-  background-color: #e6f1fc;
-}
-
-.category-submenu {
-  padding-left: 10px;
-}
-
-.category-submenu .nav-item {
-  padding: 10px 16px;
-}
-
 .settings-nav {
+  margin-top: auto;
+}
+
+/* 确保设置菜单项在底部 */
+.el-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.el-menu-item.settings-nav {
   margin-top: auto;
 }
 </style>

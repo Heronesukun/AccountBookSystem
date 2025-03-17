@@ -1,7 +1,9 @@
 package com.fm.sso.controller;
 
 import com.fm.common.pojo.FMResult;
+import com.fm.dto.UserRegisterDTO;
 import com.fm.pojo.User;
+import com.fm.sso.service.UserRegisterService;
 import com.fm.sso.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private UserRegisterService userRegisterService;
 
     /**
      * 登录
@@ -40,5 +45,16 @@ public class UserController {
     @RequestMapping("/check")
     public FMResult check(String token) {
         return userService.checkLogin(token);
+    }
+    
+    /**
+     * 用户注册
+     *
+     * @param userRegisterDTO 用户注册信息
+     * @return 注册结果
+     */
+    @PostMapping("/register")
+    public FMResult register(@RequestBody UserRegisterDTO userRegisterDTO) {
+        return userRegisterService.register(userRegisterDTO);
     }
 }

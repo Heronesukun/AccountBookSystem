@@ -12,7 +12,10 @@
             </el-form-item>
             <el-form-item>
               <el-button @click="doLogin">登录</el-button>
-              <el-button type="primary" @click="goToRegister">注册</el-button>
+              <!-- 在登录表单底部添加 -->
+              <div class="register-link">
+                还没有账号？<router-link to="/register">立即注册</router-link>
+              </div>
             </el-form-item>
           </el-form>
         </el-col>

@@ -300,3 +300,182 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.record-drawer-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+}
+
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s;
+}
+
+.drawer-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  transform: translateX(0);
+  transition: transform 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  padding: 8px;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #666;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.tab {
+  cursor: pointer;
+  padding: 8px 12px;
+  color: #666;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.tab.active {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #409eff;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+}
+
+.form-group textarea {
+  height: 80px;
+  resize: vertical;
+}
+
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 12px;
+  background: #fff;
+}
+
+.save-button,
+.save-continue-button {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.save-button {
+  background-color: #409eff;
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #66b1ff;
+}
+
+.save-continue-button {
+  background-color: #f0f2f5;
+  color: #606266;
+}
+
+.save-continue-button:hover {
+  background-color: #e4e7ed;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+  .drawer-content {
+    width: 100%;
+  }
+}
+</style>

@@ -1,12 +1,52 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.fm.sso.mapper.UserMapper">
-    <select id="selectByUsername" resultType="com.fm.pojo.User">
-        select * from fm_user where username = #{username};
+    <resultMap id="BaseResultMap" type="com.fm.pojo.User">
+        <id column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="real_name" property="realName" jdbcType="VARCHAR"/>
+        <result column="user_pass" property="userPass" jdbcType="CHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="modify_time" property="modifyTime" jdbcType="TIMESTAMP"/>
+        <result column="user_status" property="userStatus" jdbcType="INTEGER"/>
+        <result column="dept_id" property="deptId" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id, username, real_name, user_pass, create_time, modify_time, user_status, dept_id
+    </sql>
+
+    <select id="selectByUsername" resultMap="BaseResultMap" parameterType="java.lang.String">
+        select
+        <include refid="Base_Column_List"/>
+        from fm_user
+        where username = #{username}
     </select>
-    <select id="selectByUserId" resultType="com.fm.pojo.User">
-        select * from fm_user where user_id = #{userId}
+
+    <select id="selectByUserId" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List"/>
+        from fm_user
+        where user_id = #{userId}
     </select>
+    
+    <select id="findByUsername" resultMap="BaseResultMap" parameterType="java.lang.String">
+        select
+        <include refid="Base_Column_List"/>
+        from fm_user
+        where username = #{username}
+    </select>
+    
+    <insert id="insert" parameterType="com.fm.pojo.User" useGeneratedKeys="true" keyProperty="userId">
+        insert into fm_user (
+            username, real_name, user_pass, 
+            create_time, modify_time, user_status, 
+            dept_id
+        )
+        values (
+            #{username}, #{realName}, #{userPass}, 
+            #{createTime}, #{modifyTime}, #{userStatus}, 
+            #{deptId}
+        )
+    </insert>
 </mapper>

@@ -1,9 +1,7 @@
 package com.fm.pojo;
 
-
 import com.fasterxml.jackson.annotation.JsonFormat;
-
-import javax.xml.crypto.Data;
+import java.util.Date;
 
 /**
  * @Author hitsune
@@ -18,9 +16,9 @@ public class User {
     private String userPass;
     private String realName;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Data createTime;
+    private Date createTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Data modifyTime;
+    private Date modifyTime;
     private Integer userStatus;
     private Integer deptId;
 
@@ -56,19 +54,19 @@ public class User {
         this.realName = realName;
     }
 
-    public Data getCreateTime() {
+    public Date getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(Data createTime) {
+    public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
 
-    public Data getModifyTime() {
+    public Date getModifyTime() {
         return modifyTime;
     }
 
-    public void setModifyTime(Data modifyTime) {
+    public void setModifyTime(Date modifyTime) {
         this.modifyTime = modifyTime;
     }
 

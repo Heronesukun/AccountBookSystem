@@ -1,27 +1,33 @@
 <template>
   <div class="ledger-detail-container">
-    <!-- 顶部导航栏 -->
-    <div class="top-nav">
-      <div class="left-nav">
-        <button @click="goToHome">Home</button>
-      </div>
-      <div class="center-nav">
-        <h1>{{ bookName }}</h1>
-      </div>
-      <div class="right-nav">
-        <button @click="goToMemberManagement">成员管理</button>
-      </div>
-    </div>
+    <el-container>
+      <!-- 顶部导航栏 -->
+      <el-header>
+        <div class="top-nav">
+          <div class="left-nav">
+            <el-button @click="goToHome">Home</el-button>
+          </div>
+          <div class="center-nav">
+            <h1>{{ bookName }}</h1>
+          </div>
+          <div class="right-nav">
+            <el-button @click="goToMemberManagement">成员管理</el-button>
+          </div>
+        </div>
+      </el-header>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 侧边栏 -->
-      <Sidebar :activePage="activePage" @change-page="changePage" @open-record-drawer="openRecordDrawer" />
+      <!-- 主要内容区域 -->
+      <el-container class="main-content">
+        <!-- 侧边栏 -->
+        <el-aside width="200px">
+          <Sidebar :activePage="activePage" @change-page="changePage" @open-record-drawer="openRecordDrawer" />
+        </el-aside>
 
-      <!-- 内容显示区域 -->
-      <div class="content-area">
-        <component :is="currentComponent" :bookId="bookId"></component>
-      </div>
+        <!-- 内容显示区域 -->
+        <el-main class="content-area">
+          <component :is="currentComponent" :bookId="bookId" ref="currentComponent"></component>
+        </el-main>
+      </el-container>
 
       <!-- 记账抽屉 -->
       <RecordDrawer
@@ -31,7 +37,7 @@
           @save-and-continue="saveAndContinue"
           :bookId="bookId"
       />
-    </div>
+    </el-container>
   </div>
 </template>
 
@@ -156,3 +162,38 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.ledger-detail-container {
+  height: 100vh;
+  width: 100%;
+}
+
+.el-header {
+  padding: 0;
+  background-color: #f5f7fa;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 100%;
+}
+
+.el-aside {
+  background-color: #f5f7fa;
+  color: #333;
+  border-right: 1px solid #e6e6e6;
+}
+
+.el-main {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.main-content {
+  height: calc(100vh - 60px);
+}
+</style>
