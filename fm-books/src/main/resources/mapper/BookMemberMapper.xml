@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.fm.books.mapper.BookMemberMapper">
+    
+    <!-- 获取账本信息（包含成员） -->
+    <select id="getBookWithMembers" resultType="com.fm.pojo.AccountBook">
+        SELECT 
+            bid as bookId,
+            book_master as bookMaster,
+            bname as bookName,
+            participants1 as bookParticipant1,
+            participants2 as bookParticipant2,
+            participants3 as bookParticipant3,
+            participants4 as bookParticipant4,
+            create_time as createTime,
+            b_status as bookStatus
+        FROM 
+            book_total
+        WHERE 
+            bid = #{bookId}
+    </select>
+    
+    <!-- 添加账本成员 -->
+    <update id="addBookMember">
+        UPDATE book_total
+        <set>
+            <if test="position == 1">participants1 = #{memberName},</if>
+            <if test="position == 2">participants2 = #{memberName},</if>
+            <if test="position == 3">participants3 = #{memberName},</if>
+            <if test="position == 4">participants4 = #{memberName},</if>
+        </set>
+        WHERE bid = #{bookId}
+    </update>
+    
+    <!-- 删除账本成员 -->
+    <update id="removeBookMember">
+        UPDATE book_total
+        <set>
+            <if test="position == 1">participants1 = NULL,</if>
+            <if test="position == 2">participants2 = NULL,</if>
+            <if test="position == 3">participants3 = NULL,</if>
+            <if test="position == 4">participants4 = NULL,</if>
+        </set>
+        WHERE bid = #{bookId}
+    </update>
+    
+    <!-- 更新账本成员 -->
+    <update id="updateBookMember">
+        UPDATE book_total
+        SET 
+            participants1 = CASE WHEN participants1 = #{oldMemberName} THEN #{newMemberName} ELSE participants1 END,
+            participants2 = CASE WHEN participants2 = #{oldMemberName} THEN #{newMemberName} ELSE participants2 END,
+            participants3 = CASE WHEN participants3 = #{oldMemberName} THEN #{newMemberName} ELSE participants3 END,
+            participants4 = CASE WHEN participants4 = #{oldMemberName} THEN #{newMemberName} ELSE participants4 END
+        WHERE 
+            bid = #{bookId}
+    </update>
+    
+    <!-- 检查用户是否为账本成员 -->
+    <select id="checkIsMember" resultType="int">
+        SELECT COUNT(1) FROM book_total
+        WHERE 
+            bid = #{bookId} 
+            AND (
+                book_master = #{memberName} 
+                OR participants1 = #{memberName} 
+                OR participants2 = #{memberName} 
+                OR participants3 = #{memberName} 
+                OR participants4 = #{memberName}
+            )
+    </select>
+    
+</mapper>

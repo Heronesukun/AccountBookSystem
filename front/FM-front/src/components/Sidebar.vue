@@ -49,6 +49,11 @@ export default {
     activePage: {
       type: String,
       required: true
+    },
+    // 添加bookId作为prop
+    bookId: {
+      type: [String, Number],
+      default: null
     }
   },
   data() {
@@ -69,6 +74,34 @@ export default {
   },
   methods: {
     changePage(pageId) {
+      // 确保在控制台输出当前点击的页面ID，便于调试
+      console.log('点击了页面:', pageId);
+      
+      // 检查是否点击了商家管理
+      if (pageId === 'merchants') {
+        console.log('点击了商家管理');
+        // 优先使用props中的bookId，如果没有再尝试从localStorage获取
+        const bookId = this.bookId || localStorage.getItem('currentBookId');
+        
+        // 增加日志记录，便于调试
+        console.log('获取到的bookId:', bookId);
+        console.log('props中的bookId:', this.bookId);
+        console.log('localStorage中的currentBookId:', localStorage.getItem('currentBookId'));
+        
+        if (!bookId) {
+          console.error('未找到当前账本ID');
+          // 可以添加用户提示
+          this.$emit('show-error', '未找到当前账本ID，请返回首页重新选择账本');
+          return;
+        }
+        
+        // 确保将bookId存入localStorage
+        localStorage.setItem('currentBookId', bookId);
+        // 直接发出带有bookId的事件
+        this.$emit('change-page', pageId, bookId);
+        return;
+      }
+      
       this.$emit('change-page', pageId);
     },
     openRecordDrawer() {

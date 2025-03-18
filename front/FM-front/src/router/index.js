@@ -33,7 +33,20 @@ const router = createRouter({
       name: "account",
       component:()=>import("@/views/AccountManagement.vue"),
       props: true
-    }
+    },
+    {
+      path:"/members/:bookId",  // 添加成员管理页面路由
+      name: "members",
+      component:()=>import("@/views/MemberManagement.vue"),
+      props: true
+    },
+    // 添加商家管理路由
+    {
+      path: '/merchant/:bookId',
+      name: 'MerchantManagement',
+      component: () => import('@/views/MerchantManagement.vue'),
+      meta: { requiresAuth: true }
+    },
   ]
 })
 

@@ -37,7 +37,7 @@ CREATE TABLE `book_total`  (
 -- ----------------------------
 -- Records of book_total
 -- ----------------------------
-INSERT INTO `book_total` VALUES (1, 'zhangsan', 'dachui', '2025-02-23 16:43:44', 'Updated Family Book', 99, NULL, NULL, NULL);
+INSERT INTO `book_total` VALUES (1, 'zhangsan', 'dachui', '2025-02-23 16:43:44', 'Updated Family Book', 1, NULL, NULL, NULL);
 INSERT INTO `book_total` VALUES (2, 'dachui', NULL, '2025-02-23 16:47:15', '家庭账本', 1, NULL, NULL, NULL);
 INSERT INTO `book_total` VALUES (3, 'zhangsan', NULL, '2025-02-23 19:20:59', '学习账本', 1, NULL, NULL, NULL);
 INSERT INTO `book_total` VALUES (6, 'dachui', 'zhangsan', '2025-02-23 19:50:51', '家庭账本本', 1, NULL, NULL, NULL);

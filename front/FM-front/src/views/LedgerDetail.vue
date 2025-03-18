@@ -20,8 +20,14 @@
       <el-container class="main-content">
         <!-- 侧边栏 -->
         <el-aside width="200px">
-          <Sidebar :activePage="activePage" @change-page="changePage" @open-record-drawer="openRecordDrawer" />
-        </el-aside>
+  <Sidebar 
+    :activePage="activePage" 
+    :bookId="bookId" 
+    @change-page="changePage" 
+    @open-record-drawer="openRecordDrawer"
+    @show-error="showErrorMessage" 
+  />
+</el-aside>
 
         <!-- 内容显示区域 -->
         <el-main class="content-area">
@@ -100,6 +106,13 @@ export default {
   mounted() {
     // 获取账本信息
     this.fetchBookDetails();
+        // 确保在组件挂载时将bookId存入localStorage
+        if (this.bookId) {
+      localStorage.setItem('currentBookId', this.bookId);
+      console.log('已将bookId存入localStorage:', this.bookId);
+    } else {
+      console.error('LedgerDetail组件挂载时bookId为空');
+    }
   },
   methods: {
     goToHome() {
@@ -108,8 +121,45 @@ export default {
     goToMemberManagement() {
       this.activePage = 'members';
     },
-    changePage(page) {
-      this.activePage = page;
+    changePage(pageId, bookId) {
+      console.log('切换页面:', pageId, '账本ID:', bookId);
+      this.activePage = pageId;
+      
+      // 如果提供了bookId，确保更新本地存储
+      if (bookId) {
+        localStorage.setItem('currentBookId', bookId);
+      }
+      
+      // 根据页面ID设置当前组件
+      switch (pageId) {
+        case 'home':
+          this.currentComponent = this.pageComponents.home;
+          break;
+        case 'transactions':
+          this.currentComponent = this.pageComponents.transactions;
+          break;
+        case 'reports':
+          this.currentComponent = this.pageComponents.reports;
+          break;
+        case 'categories':
+          this.currentComponent = this.pageComponents.categories;
+          break;
+        case 'accounts':
+          this.currentComponent = this.pageComponents.accounts;
+          break;
+        case 'members':
+          this.currentComponent = this.pageComponents.members;
+          break;
+        case 'merchants':
+          this.currentComponent = this.pageComponents.merchants;
+          break;
+        case 'projects':
+          this.currentComponent = this.pageComponents.projects;
+          break;
+        case 'settings':
+          this.currentComponent = this.pageComponents.settings;
+          break;
+      }
     },
     openRecordDrawer() {
       this.showRecordDrawer = true;
