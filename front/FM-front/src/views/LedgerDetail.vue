@@ -61,6 +61,8 @@ import ProjectManagementPage from '../components/pages/ProjectManagementPage.vue
 import SettingsPage from '../components/pages/SettingsPage.vue';
 
 import mainPageBookRequest from '@/api/mainPageBook.js';
+// 导入通用表API
+import generalTableApi from '@/api/generalTable.js';
 
 export default {
   name: 'LedgerDetail',
@@ -167,26 +169,107 @@ export default {
     closeRecordDrawer() {
       this.showRecordDrawer = false;
     },
-    saveRecord(recordData) {
-      // 保存记录的逻辑，后续连接API
-      console.log('Saving record:', recordData);
-      // 模拟API调用
-      setTimeout(() => {
-        this.closeRecordDrawer();
-        // 刷新数据
-        this.refreshData();
-      }, 500);
+    async saveRecord(recordData) {
+      try {
+        // 获取当前用户ID
+        const userId = localStorage.getItem('userId');
+        
+        // 确保recordData中包含必要的信息
+        recordData.bid = this.bookId;
+        recordData.userId = userId;
+        
+        // 调用API保存数据
+        const response = await generalTableApi.addGeneralTable(recordData);
+        
+        if (response.data.code === 200) {
+          this.$message.success('保存成功');
+          this.closeRecordDrawer();
+          // 刷新数据
+          this.refreshData();
+        } else {
+          this.$message.error(response.data.msg || '保存失败');
+        }
+      } catch (error) {
+        console.error('保存记录失败:', error);
+        this.$message.error('保存失败，请稍后重试');
+      }
     },
-    saveAndContinue(recordData) {
-      // 保存并继续记账
-      console.log('Saving record and continuing:', recordData);
-      // 模拟API调用
-      setTimeout(() => {
-        // 不关闭抽屉，但重置抽屉内表单
-        this.$refs.recordDrawer && this.$refs.recordDrawer.resetForm();
-        // 刷新数据
-        this.refreshData();
-      }, 500);
+    async saveAndContinue(recordData) {
+      try {
+        // 获取当前用户ID
+        const userId = localStorage.getItem('userId');
+        
+        // 确保recordData中包含必要的信息
+        recordData.bid = this.bookId;
+        recordData.userId = userId;
+        
+        // 调用API保存数据
+        const response = await generalTableApi.addGeneralTable(recordData);
+        
+        if (response.data.code === 200) {
+          this.$message.success('保存成功');
+          // 不关闭抽屉，但重置抽屉内表单
+          if (this.$refs.recordDrawer) {
+            this.$refs.recordDrawer.resetForm();
+          }
+          // 刷新数据
+          this.refreshData();
+        } else {
+          this.$message.error(response.data.msg || '保存失败');
+        }
+      } catch (error) {
+        console.error('保存记录失败:', error);
+        this.$message.error('保存失败，请稍后重试');
+      }
+    },
+    fetchBookDetails() {
+      // 获取账本详情
+      // 这里使用现有的API，后续根据实际情况调整
+      mainPageBookRequest.getMainPageBooks(this.bookMaster).then(res => {
+        if (res.data.code === 200) {
+          const books = res.data.data;
+          const currentBook = books.find(book => book.bookId == this.bookId);
+          if (currentBook) {
+            this.bookName = currentBook.bookName;
+          }
+        }
+      }).catch(err => {
+        console.error('获取账本详情失败:', err);
+      });
+    },
+    refreshData() {
+      // 刷新当前页面数据
+      if (this.currentComponent && this.$refs.currentComponent && this.$refs.currentComponent.fetchData) {
+        this.$refs.currentComponent.fetchData();
+      }
+    },
+    saveRecord(recordId) {
+      console.log('记录已保存，ID:', recordId);
+      this.showRecordDrawer = false;
+      
+      // 如果当前页面是交易记录页面，刷新数据
+      if (this.activePage === 'transactions' && this.$refs.currentComponent) {
+        this.$refs.currentComponent.refreshData();
+      }
+      
+      // 如果当前页面是首页，刷新数据
+      if (this.activePage === 'home' && this.$refs.currentComponent) {
+        this.$refs.currentComponent.refreshData();
+      }
+    },
+    
+    saveAndContinue(recordId) {
+      console.log('记录已保存并继续，ID:', recordId);
+      
+      // 如果当前页面是交易记录页面，刷新数据
+      if (this.activePage === 'transactions' && this.$refs.currentComponent) {
+        this.$refs.currentComponent.refreshData();
+      }
+      
+      // 如果当前页面是首页，刷新数据
+      if (this.activePage === 'home' && this.$refs.currentComponent) {
+        this.$refs.currentComponent.refreshData();
+      }
     },
     fetchBookDetails() {
       // 获取账本详情

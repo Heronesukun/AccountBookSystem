@@ -67,8 +67,7 @@ export default {
         { id: 'categories', name: '收支分类', icon: '📋' },
         { id: 'accounts', name: '账户管理', icon: '💳' },
         { id: 'members', name: '成员管理', icon: '👥' },
-        { id: 'merchants', name: '商家管理', icon: '🏬' },
-        { id: 'projects', name: '项目管理', icon: '📁' }
+        { id: 'merchants', name: '商家管理', icon: '🏬' }
       ]
     };
   },

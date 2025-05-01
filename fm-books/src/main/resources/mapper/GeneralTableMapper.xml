@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fm.books.mapper.GeneralTableMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.fm.pojo.GeneralTable">
+        <id column="id" property="id" />
+        <result column="bid" property="bid" />
+        <result column="user_id" property="userId" />
+        <result column="account_category_id" property="accountCategoryId" />
+        <result column="merchant_id" property="merchantId" />
+        <result column="category_id" property="categoryId" />
+        <result column="amount" property="amount" />
+        <result column="date" property="date" />
+        <result column="desc" property="desc" />
+        <result column="type" property="type" />
+        <result column="reser2" property="reser2" />
+        <result column="is_deleted" property="isDeleted" />
+        <result column="transfer_account_id" property="transferAccountId" />
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id
+    </sql>
+    
+    <!-- 插入流水记录 -->
+    <insert id="insertGeneralTable" parameterType="com.fm.pojo.GeneralTable" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fm_general_table (
+            bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id
+        ) VALUES (
+            #{bid}, #{userId}, #{accountCategoryId}, #{merchantId}, #{categoryId}, #{amount}, #{date}, #{desc}, #{type}, #{reser2}, 0, #{transferAccountId}
+        )
+    </insert>
+    
+    <!-- 根据ID查询流水记录 -->
+    <select id="selectGeneralTableById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据账本ID查询流水记录 -->
+    <select id="selectGeneralTablesByBid" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId}
+        ORDER BY date DESC
+    </select>
+    
+    <!-- 根据条件查询流水记录 -->
+    <select id="selectGeneralTablesByCondition" parameterType="java.util.Map" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        <where>
+            <if test="bid != null">
+                AND bid = #{bid}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="accountCategoryId != null">
+                AND account_category_id = #{accountCategoryId}
+            </if>
+            <if test="merchantId != null">
+                AND merchant_id = #{merchantId}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="startDate != null">
+                AND date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND date &lt;= #{endDate}
+            </if>
+            <if test="minAmount != null">
+                AND amount &gt;= #{minAmount}
+            </if>
+            <if test="maxAmount != null">
+                AND amount &lt;= #{maxAmount}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND `desc` LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY date DESC
+    </select>
+    
+    <!-- 更新流水记录 -->
+    <update id="updateGeneralTable" parameterType="com.fm.pojo.GeneralTable">
+        UPDATE fm_general_table
+        <set>
+            <if test="bid != null">bid = #{bid},</if>
+            <if test="accountCategoryId != null">account_category_id = #{accountCategoryId},</if>
+            <if test="merchantId != null">merchant_id = #{merchantId},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="date != null">date = #{date},</if>
+            <if test="desc != null">`desc` = #{desc},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="reser2 != null">reser2 = #{reser2},</if>
+            <if test="isDeleted != null">is_deleted = #{isDeleted},</if>
+            <if test="transferAccountId != null">transfer_account_id = #{transferAccountId},</if>
+        </set>
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+    
+    <!-- 删除流水记录 -->
+    <delete id="deleteGeneralTable">
+        update fm_general_table
+        set is_deleted = 1
+        where id = #{id} AND user_id = #{userId}
+    </delete>
+    
+    <!-- 批量删除流水记录 -->
+    <delete id="batchDeleteGeneralTables">
+        UPDATE fm_general_table
+        SET is_deleted = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND user_id = #{userId}
+    </delete>
+    
+    <!-- 按日汇总流水记录 -->
+    <select id="selectDailySummary" resultType="java.util.Map">
+
+        SELECT
+            DATE_FORMAT(date, '%Y-%m-%d') AS date,
+            SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS income,
+            SUM(CASE WHEN amount &lt; 0 THEN ABS(amount) ELSE 0 END) AS expense,
+            SUM(amount) AS balance
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId}
+        <if test="startDate != null">
+            AND date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(date, '%Y-%m-%d')
+        ORDER BY date
+
+    </select>
+    
+    <!-- 按周汇总流水记录 -->
+    <select id="selectWeeklySummary" resultType="java.util.Map">
+
+        SELECT 
+            CONCAT(YEAR(date), '-', WEEK(date)) AS week,
+            MIN(DATE_FORMAT(date, '%Y-%m-%d')) AS start_date,
+            MAX(DATE_FORMAT(date, '%Y-%m-%d')) AS end_date,
+            SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS income,
+            SUM(CASE WHEN amount &lt; 0 THEN ABS(amount) ELSE 0 END) AS expense,
+            SUM(amount) AS balance
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId}
+        <if test="startDate != null">
+            AND date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date &lt;= #{endDate}
+        </if>
+        GROUP BY YEAR(date), WEEK(date)
+        ORDER BY YEAR(date), WEEK(date)
+
+    </select>
+    
+    <!-- 按月汇总流水记录 -->
+    <select id="selectMonthlySummary" resultType="java.util.Map">
+
+        SELECT 
+            DATE_FORMAT(date, '%Y-%m') AS month,
+            SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS income,
+            SUM(CASE WHEN amount &lt; 0 THEN ABS(amount) ELSE 0 END) AS expense,
+            SUM(amount) AS balance
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId}
+        <if test="startDate != null">
+            AND date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(date, '%Y-%m')
+        ORDER BY month
+
+    </select>
+    
+    <!-- 按年汇总流水记录 -->
+    <select id="selectYearlySummary" resultType="java.util.Map">
+
+        SELECT 
+            YEAR(date) AS year,
+            SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS income,
+            SUM(CASE WHEN amount &lt; 0 THEN ABS(amount) ELSE 0 END) AS expense,
+            SUM(amount) AS balance
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId}
+        <if test="startDate != null">
+            AND date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date &lt;= #{endDate}
+        </if>
+        GROUP BY YEAR(date)
+        ORDER BY year
+
+    </select>
+</mapper>

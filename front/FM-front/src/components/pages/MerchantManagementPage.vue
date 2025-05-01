@@ -243,15 +243,7 @@
   // 加载分类数据
   const loadCategories = async () => {
     try {
-      // 直接使用 axios 发送请求
-      const response = await axios.get(`${config.mdBaseUrl}/category/list`, {
-        params: {
-          bookId: currentBookId.value,
-          userId: userId.value,
-          type: 'expense'
-        },
-        headers: { token: localStorage.getItem('token') }
-      });
+      const response = await categoryApi.getCategoryList(currentBookId.value, userId.value, 'expense');
       
       if (response.data.code === 200) {
         // 只获取一级分类

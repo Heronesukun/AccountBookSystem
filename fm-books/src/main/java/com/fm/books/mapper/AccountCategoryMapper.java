@@ -97,10 +97,10 @@ public interface AccountCategoryMapper {
     
     /**
      * 更新账户金额
-     * @param id 账户ID
+     * @param id 账户分类ID
      * @param userId 用户ID
      * @param amount 金额
      * @return 影响行数
      */
-    int updateAccountAmount(Long id, String userId, Double amount);
+    int updateAccountAmount(@Param("id") Long id, @Param("userId") String userId, @Param("amount") Double amount);
 }
