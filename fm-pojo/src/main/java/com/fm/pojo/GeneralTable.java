@@ -23,6 +23,13 @@ public class GeneralTable {
     private String reser2;    // 备用字段2
     private Integer isDeleted;      // 删除状态字段
     private Long transferAccountId;      // 接收转账账户id
+    
+    // 新增字段
+    private String userName;              // 记账用户名
+    private String accountCategoryName;   // 记账账户名
+    private String merchantName;          // 商家名
+    private String categoryName;          // 分类名
+    private String generalIcon;           // 图标
 
     // 无参构造函数
     public GeneralTable() {
@@ -133,5 +140,46 @@ public class GeneralTable {
 
     public void setTransferAccountId(Long transferAccountId) {
         this.transferAccountId = transferAccountId;
+    }
+    
+    // 新增字段的getter和setter方法
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getAccountCategoryName() {
+        return accountCategoryName;
+    }
+
+    public void setAccountCategoryName(String accountCategoryName) {
+        this.accountCategoryName = accountCategoryName;
+    }
+
+    public String getMerchantName() {
+        return merchantName;
+    }
+
+    public void setMerchantName(String merchantName) {
+        this.merchantName = merchantName;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getGeneralIcon() {
+        return generalIcon;
+    }
+
+    public void setGeneralIcon(String generalIcon) {
+        this.generalIcon = generalIcon;
     }
 }

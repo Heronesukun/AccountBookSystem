@@ -36,26 +36,26 @@ public class GeneralTableController {
     /**
      * 根据ID查询流水记录
      */
-    @GetMapping("/get/{id}")
-    public FMResult getGeneralTableById(@PathVariable Long id) {
-        return generalTableService.getGeneralTableById(id);
-    }
-
-    /**
-     * 根据账本ID查询流水记录
-     */
-    @GetMapping("/list/{bid}/{userId}")
-    public FMResult getGeneralTablesByBid(@PathVariable Long bid, @PathVariable Long userId) {
-        return generalTableService.getGeneralTablesByBid(bid, userId);
-    }
-
-    /**
-     * 条件查询流水记录
-     */
-    @PostMapping("/search")
-    public FMResult searchGeneralTables(@RequestBody Map<String, Object> params) {
-        return generalTableService.getGeneralTablesByCondition(params);
-    }
+//    @GetMapping("/get/{id}")
+//    public FMResult getGeneralTableById(@PathVariable Long id) {
+//        return generalTableService.getGeneralTableById(id);
+//    }
+//
+//    /**
+//     * 根据账本ID查询流水记录
+//     */
+//    @GetMapping("/list/{bid}/{userId}")
+//    public FMResult getGeneralTablesByBid(@PathVariable Long bid, @PathVariable Long userId) {
+//        return generalTableService.getGeneralTablesByBid(bid, userId);
+//    }
+//
+//    /**
+//     * 条件查询流水记录
+//     */
+//    @PostMapping("/search")
+//    public FMResult searchGeneralTables(@RequestBody Map<String, Object> params) {
+//        return generalTableService.getGeneralTablesByCondition(params);
+//    }
 
     /**
      * 更新流水记录
@@ -94,5 +94,29 @@ public class GeneralTableController {
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
         return generalTableService.getSummaryByDate(bid, userId, summaryType, startDate, endDate);
+    }
+    
+    /**
+     * 根据ID查询流水记录（包含详细信息）
+     */
+    @GetMapping("/get/{id}")
+    public FMResult getGeneralTableDetailById(@PathVariable Long id) {
+        return generalTableService.getGeneralTableDetailById(id);
+    }
+    
+    /**
+     * 根据账本ID查询流水记录（包含详细信息）
+     */
+    @GetMapping("/list/{bid}/{userId}")
+    public FMResult getGeneralTableDetailsByBid(@PathVariable Long bid, @PathVariable Long userId) {
+        return generalTableService.getGeneralTableDetailsByBid(bid, userId);
+    }
+    
+    /**
+     * 条件查询流水记录（包含详细信息）
+     */
+    @PostMapping("/search")
+    public FMResult searchGeneralTableDetails(@RequestBody Map<String, Object> params) {
+        return generalTableService.getGeneralTableDetailsByCondition(params);
     }
 }

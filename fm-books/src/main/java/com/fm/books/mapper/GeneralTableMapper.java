@@ -30,6 +30,13 @@ public interface GeneralTableMapper {
     GeneralTable selectGeneralTableById(Long id);
     
     /**
+     * 根据ID查询流水记录（包含详细信息）
+     * @param id 流水记录ID
+     * @return 流水记录详细信息
+     */
+    GeneralTable selectGeneralTableDetailById(Long id);
+    
+    /**
      * 根据账本ID查询流水记录
      * @param bid 账本ID
      * @param userId 用户ID
@@ -38,11 +45,26 @@ public interface GeneralTableMapper {
     List<GeneralTable> selectGeneralTablesByBid(@Param("bid") Long bid, @Param("userId") Long userId);
     
     /**
+     * 根据账本ID查询流水记录（包含详细信息）
+     * @param bid 账本ID
+     * @param userId 用户ID
+     * @return 流水记录详细信息列表
+     */
+    List<GeneralTable> selectGeneralTableDetailsByBid(@Param("bid") Long bid, @Param("userId") Long userId);
+    
+    /**
      * 根据条件查询流水记录
      * @param params 查询条件
      * @return 流水记录列表
      */
     List<GeneralTable> selectGeneralTablesByCondition(Map<String, Object> params);
+    
+    /**
+     * 根据条件查询流水记录（包含详细信息）
+     * @param params 查询条件
+     * @return 流水记录详细信息列表
+     */
+    List<GeneralTable> selectGeneralTableDetailsByCondition(Map<String, Object> params);
     
     /**
      * 更新流水记录

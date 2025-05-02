@@ -11,7 +11,7 @@
  Target Server Version : 50744
  File Encoding         : 65001
 
- Date: 28/04/2025 18:39:11
+ Date: 02/05/2025 15:26:40
 */
 
 SET NAMES utf8mb4;
@@ -59,7 +59,7 @@ INSERT INTO `fm_account_category` VALUES (9, '农行储蓄卡', 'ASSET', 2, 2, '
 INSERT INTO `fm_account_category` VALUES (10, '股票账户', 'ASSET', 3, 2, 'stock_icon', 1, 1, '1', 20000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (11, '基金账户', 'ASSET', 3, 2, 'fund_icon', 2, 1, '1', 15000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (12, '理财产品', 'ASSET', 3, 2, 'finance_icon', 3, 1, '1', 30000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
-INSERT INTO `fm_account_category` VALUES (13, '支付宝', 'ASSET', 4, 2, 'alipay_icon', 1, 1, '1', 3000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
+INSERT INTO `fm_account_category` VALUES (13, '支付宝', 'ASSET', 4, 2, 'alipay_icon', 1, 1, '1', 1365.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-05-01 19:04:36');
 INSERT INTO `fm_account_category` VALUES (14, '微信钱包', 'ASSET', 4, 2, 'wechat_icon', 2, 1, '1', 2000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (15, '信用账户', 'LIABILITY', NULL, 1, 'credit_icon', 1, 1, '1', 0.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (16, '贷款账户', 'LIABILITY', NULL, 1, 'loan_icon', 2, 1, '1', 0.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
@@ -70,6 +70,6 @@ INSERT INTO `fm_account_category` VALUES (20, '招行信用卡', 'LIABILITY', 15
 INSERT INTO `fm_account_category` VALUES (21, '房贷', 'LIABILITY', 16, 2, 'house_loan_icon', 1, 1, '1', -500000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:32:54');
 INSERT INTO `fm_account_category` VALUES (22, '车贷', 'LIABILITY', 16, 2, 'car_loan_icon', 2, 1, '1', -80000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:32:59');
 INSERT INTO `fm_account_category` VALUES (23, '消费贷', 'LIABILITY', 16, 2, 'consumer_loan_icon', 3, 1, '1', -20000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:33:02');
-INSERT INTO `fm_account_category` VALUES (24, '花呗', 'LIABILITY', 16, 2, '', 0, 1, '1', 0.00, 1, 0, 0, 0, '2025-03-17 18:31:56', '2025-03-17 18:33:05');
+INSERT INTO `fm_account_category` VALUES (24, '花呗', 'LIABILITY', 16, 2, '', 0, 1, '1', 200.00, 1, 0, 0, 0, '2025-03-17 18:31:56', '2025-05-01 17:38:24');
 
 SET FOREIGN_KEY_CHECKS = 1;

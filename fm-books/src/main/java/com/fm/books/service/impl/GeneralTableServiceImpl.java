@@ -3,8 +3,12 @@ package com.fm.books.service.impl;
 import com.fm.common.pojo.FMResult;
 import com.fm.books.mapper.GeneralTableMapper;
 import com.fm.books.mapper.AccountCategoryMapper;
+import com.fm.books.mapper.CategoryMapper;
+import com.fm.books.mapper.MerchantMapper;
 import com.fm.pojo.AccountCategory;
+import com.fm.pojo.Category;
 import com.fm.pojo.GeneralTable;
+import com.fm.pojo.Merchant;
 import com.fm.books.service.GeneralTableService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +33,87 @@ public class GeneralTableServiceImpl implements GeneralTableService {
     
     @Autowired
     private AccountCategoryMapper accountCategoryMapper;
+    
+    @Autowired
+    private CategoryMapper categoryMapper;
+    
+    @Autowired
+    private MerchantMapper merchantMapper;
 
+
+    @Override
+    public FMResult getGeneralTableById(Long id) {
+        try {
+            GeneralTable generalTable = generalTableMapper.selectGeneralTableById(id);
+            if (generalTable != null) {
+                return FMResult.success(generalTable);
+            }
+            return FMResult.error(404, "流水记录不存在");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "查询流水记录异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FMResult getGeneralTablesByBid(Long bid, Long userId) {
+        try {
+            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTablesByBid(bid, userId);
+            return FMResult.success(generalTables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "查询流水记录列表异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FMResult getGeneralTablesByCondition(Map<String, Object> params) {
+        try {
+            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTablesByCondition(params);
+            return FMResult.success(generalTables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "条件查询流水记录异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FMResult getGeneralTableDetailById(Long id) {
+        try {
+            GeneralTable generalTable = generalTableMapper.selectGeneralTableDetailById(id);
+            if (generalTable != null) {
+                return FMResult.success(generalTable);
+            }
+            return FMResult.error(404, "流水记录不存在");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "查询流水记录详情异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FMResult getGeneralTableDetailsByBid(Long bid, Long userId) {
+        try {
+            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTableDetailsByBid(bid, userId);
+            return FMResult.success(generalTables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "查询流水记录详情列表异常: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public FMResult getGeneralTableDetailsByCondition(Map<String, Object> params) {
+        try {
+            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTableDetailsByCondition(params);
+            return FMResult.success(generalTables);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return FMResult.error(500, "条件查询流水记录详情异常: " + e.getMessage());
+        }
+    }
+    
+    // 修改现有方法，在添加和更新时手动填充相关名称信息
     @Override
     @Transactional
     public FMResult addGeneralTable(GeneralTable generalTable) {
@@ -37,6 +121,38 @@ public class GeneralTableServiceImpl implements GeneralTableService {
             // 设置创建时间
             if (generalTable.getDate() == null) {
                 generalTable.setDate(new Date());
+            }
+            
+            // 获取并设置用户名、账户名、商家名、分类名和图标
+            // 1. 获取用户名
+            if (generalTable.getUserName() == null && generalTable.getUserId() != null) {
+                // 这里需要调用用户服务获取用户名，暂时使用默认值
+                generalTable.setUserName("用户" + generalTable.getUserId());
+            }
+            
+            // 2. 获取账户名
+            if (generalTable.getAccountCategoryName() == null && generalTable.getAccountCategoryId() != null) {
+                AccountCategory accountCategory = accountCategoryMapper.selectAccountCategoryById(generalTable.getAccountCategoryId());
+                if (accountCategory != null) {
+                    generalTable.setAccountCategoryName(accountCategory.getName());
+                }
+            }
+            
+            // 3. 获取商家名
+            if (generalTable.getMerchantName() == null && generalTable.getMerchantId() != null) {
+                Merchant merchant = merchantMapper.selectMerchantById(generalTable.getMerchantId());
+                if (merchant != null) {
+                    generalTable.setMerchantName(merchant.getName());
+                }
+            }
+            
+            // 4. 获取分类名和图标
+            if ((generalTable.getCategoryName() == null || generalTable.getGeneralIcon() == null) && generalTable.getCategoryId() != null) {
+                Category category = categoryMapper.selectCategoryById(generalTable.getCategoryId());
+                if (category != null) {
+                    generalTable.setCategoryName(category.getName());
+                    generalTable.setGeneralIcon(category.getIcon());
+                }
             }
             
             // 插入流水记录
@@ -108,42 +224,6 @@ public class GeneralTableServiceImpl implements GeneralTableService {
     }
 
     @Override
-    public FMResult getGeneralTableById(Long id) {
-        try {
-            GeneralTable generalTable = generalTableMapper.selectGeneralTableById(id);
-            if (generalTable != null) {
-                return FMResult.success(generalTable);
-            }
-            return FMResult.error(404, "流水记录不存在");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return FMResult.error(500, "查询流水记录异常: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public FMResult getGeneralTablesByBid(Long bid, Long userId) {
-        try {
-            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTablesByBid(bid, userId);
-            return FMResult.success(generalTables);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return FMResult.error(500, "查询流水记录列表异常: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public FMResult getGeneralTablesByCondition(Map<String, Object> params) {
-        try {
-            List<GeneralTable> generalTables = generalTableMapper.selectGeneralTablesByCondition(params);
-            return FMResult.success(generalTables);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return FMResult.error(500, "条件查询流水记录异常: " + e.getMessage());
-        }
-    }
-
-    @Override
     @Transactional
     public FMResult updateGeneralTable(GeneralTable generalTable) {
         try {
@@ -156,6 +236,38 @@ public class GeneralTableServiceImpl implements GeneralTableService {
             // 检查用户权限
             if (!existGeneralTable.getUserId().equals(generalTable.getUserId())) {
                 return FMResult.error(403, "无权限修改该流水记录");
+            }
+            
+            // 获取并设置用户名、账户名、商家名、分类名和图标
+            // 1. 获取用户名
+            if (generalTable.getUserName() == null && generalTable.getUserId() != null) {
+                // 这里需要调用用户服务获取用户名，暂时使用默认值
+                generalTable.setUserName("用户" + generalTable.getUserId());
+            }
+            
+            // 2. 获取账户名
+            if (generalTable.getAccountCategoryName() == null && generalTable.getAccountCategoryId() != null) {
+                AccountCategory accountCategory = accountCategoryMapper.selectAccountCategoryById(generalTable.getAccountCategoryId());
+                if (accountCategory != null) {
+                    generalTable.setAccountCategoryName(accountCategory.getName());
+                }
+            }
+            
+            // 3. 获取商家名
+            if (generalTable.getMerchantName() == null && generalTable.getMerchantId() != null) {
+                Merchant merchant = merchantMapper.selectMerchantById(generalTable.getMerchantId());
+                if (merchant != null) {
+                    generalTable.setMerchantName(merchant.getName());
+                }
+            }
+            
+            // 4. 获取分类名和图标
+            if ((generalTable.getCategoryName() == null || generalTable.getGeneralIcon() == null) && generalTable.getCategoryId() != null) {
+                Category category = categoryMapper.selectCategoryById(generalTable.getCategoryId());
+                if (category != null) {
+                    generalTable.setCategoryName(category.getName());
+                    generalTable.setGeneralIcon(category.getIcon());
+                }
             }
             
             // 先恢复原账户余额

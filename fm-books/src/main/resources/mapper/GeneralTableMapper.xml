@@ -17,42 +17,119 @@
         <result column="reser2" property="reser2" />
         <result column="is_deleted" property="isDeleted" />
         <result column="transfer_account_id" property="transferAccountId" />
+        <!-- 新增字段映射 -->
+        <result column="user_name" property="userName" />
+        <result column="account_category_name" property="accountCategoryName" />
+        <result column="merchant_name" property="merchantName" />
+        <result column="category_name" property="categoryName" />
+        <result column="general_icon" property="generalIcon" />
     </resultMap>
     
     <!-- 基础列 -->
     <sql id="Base_Column_List">
-        id, bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id
+        id, bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id,user_name, account_category_name, merchant_name, category_name, general_icon
+    </sql>
+    
+    <!-- 添加详细查询SQL -->
+    <sql id="Detail_Column_List">
+        gt.id, gt.bid, gt.user_id, gt.account_category_id, gt.merchant_id, gt.category_id, 
+        gt.amount, gt.date, gt.`desc`, gt.type, gt.reser2, gt.is_deleted, gt.transfer_account_id,
+        u.username as user_name, 
+        ac.name as account_category_name, 
+        m.name as merchant_name, 
+        c.name as category_name,
+        c.icon as general_icon
     </sql>
     
     <!-- 插入流水记录 -->
     <insert id="insertGeneralTable" parameterType="com.fm.pojo.GeneralTable" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO fm_general_table (
-            bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id
+            bid, user_id, account_category_id, merchant_id, category_id, amount, date, `desc`, type, reser2, is_deleted, transfer_account_id,
+            user_name, account_category_name, merchant_name, category_name, general_icon
         ) VALUES (
-            #{bid}, #{userId}, #{accountCategoryId}, #{merchantId}, #{categoryId}, #{amount}, #{date}, #{desc}, #{type}, #{reser2}, 0, #{transferAccountId}
+            #{bid}, #{userId}, #{accountCategoryId}, #{merchantId}, #{categoryId}, #{amount}, #{date}, #{desc}, #{type}, #{reser2}, 0, #{transferAccountId},
+            #{userName}, #{accountCategoryName}, #{merchantName}, #{categoryName}, #{generalIcon}
         )
     </insert>
     
-    <!-- 根据ID查询流水记录 -->
+    <!-- 根据ID查询流水记录（详细信息） -->
+    <select id="selectGeneralTableDetailById" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Detail_Column_List" />
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+    
+    <!-- 根据ID查询流水记录（基础信息） -->
     <select id="selectGeneralTableById" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List" />
         FROM fm_general_table
-        WHERE id = #{id}
+        WHERE id = #{id} AND is_deleted = 0
     </select>
     
-    <!-- 根据账本ID查询流水记录 -->
-    <select id="selectGeneralTablesByBid" resultMap="BaseResultMap">
+    <!-- 根据账本ID查询流水记录（详细信息） -->
+    <select id="selectGeneralTableDetailsByBid" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List" />
         FROM fm_general_table
-        WHERE bid = #{bid} AND user_id = #{userId}
+        WHERE bid = #{bid} AND user_id = #{userId} AND is_deleted = 0
         ORDER BY date DESC
     </select>
     
-    <!-- 根据条件查询流水记录 -->
+    <!-- 根据账本ID查询流水记录（基础信息） -->
+    <select id="selectGeneralTablesByBid" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        WHERE bid = #{bid} AND user_id = #{userId} AND is_deleted = 0
+        ORDER BY date DESC
+    </select>
+    
+    <!-- 根据条件查询流水记录（详细信息） -->
+    <select id="selectGeneralTableDetailsByCondition" parameterType="java.util.Map" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM fm_general_table
+        <where>
+            is_deleted = 0
+            <if test="bid != null">
+                AND bid = #{bid}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="accountCategoryId != null">
+                AND account_category_id = #{accountCategoryId}
+            </if>
+            <if test="merchantId != null">
+                AND merchant_id = #{merchantId}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="startDate != null">
+                AND date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND date &lt;= #{endDate}
+            </if>
+            <if test="minAmount != null">
+                AND amount &gt;= #{minAmount}
+            </if>
+            <if test="maxAmount != null">
+                AND amount &lt;= #{maxAmount}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND `desc` LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY date DESC
+    </select>
+    
+    <!-- 根据条件查询流水记录（基础信息） -->
     <select id="selectGeneralTablesByCondition" parameterType="java.util.Map" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List" />
         FROM fm_general_table
         <where>
+            is_deleted = 0
             <if test="bid != null">
                 AND bid = #{bid}
             </if>

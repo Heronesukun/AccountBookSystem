@@ -77,4 +77,26 @@ public interface GeneralTableService {
      * @return 汇总数据
      */
     FMResult getSummaryByDate(Long bid, Long userId, String summaryType, Date startDate, Date endDate);
+    
+    /**
+     * 根据ID查询流水记录（包含详细信息）
+     * @param id 流水记录ID
+     * @return 流水记录详细信息
+     */
+    FMResult getGeneralTableDetailById(Long id);
+    
+    /**
+     * 根据账本ID查询流水记录（包含详细信息）
+     * @param bid 账本ID
+     * @param userId 用户ID
+     * @return 流水记录详细信息列表
+     */
+    FMResult getGeneralTableDetailsByBid(Long bid, Long userId);
+    
+    /**
+     * 根据条件查询流水记录（包含详细信息）
+     * @param params 查询条件
+     * @return 流水记录详细信息列表
+     */
+    FMResult getGeneralTableDetailsByCondition(Map<String, Object> params);
 }

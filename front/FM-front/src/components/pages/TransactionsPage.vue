@@ -495,7 +495,7 @@
           }
           
           // 获取成员列表
-          const memberRes = await bookMemberRequest.getBookMembers(props.bookId);
+          const memberRes = await bookMemberRequest.getBookMembers(props.bookId, userId);
           if (memberRes.data && memberRes.data.data) {
             members.value = memberRes.data.data;
           }
@@ -566,11 +566,11 @@
           
           if (response.data.code === 200) {
             const data = response.data.data;
-            transactions.value = data.records;
-            total.value = data.total;
+            transactions.value = data.records || [];
+            total.value = data.total || 0;
             
-            // 处理数据，将ID转换为名称
-            await processTransactionData();
+            // 处理数据，确保所有字段都存在
+            processTransactionData();
             
             // 计算总收入和支出
             calculateSummary();
@@ -585,8 +585,10 @@
         }
       };
       
-      // 处理流水数据，将ID转换为名称
-      const processTransactionData = async () => {
+      // 处理流水数据，确保所有需要的字段都存在
+      const processTransactionData = () => {
+        if (!transactions.value || transactions.value.length === 0) return;
+        
         // 创建ID到名称的映射
         const accountMap = {};
         const categoryMap = {};
@@ -600,13 +602,18 @@
         merchants.value.forEach(item => { merchantMap[item.id] = item.name; });
         projects.value.forEach(item => { projectMap[item.id] = item.name; });
         
-        // 为每条记录添加名称字段
-        transactions.value.forEach(item => {
-          item.accountName = accountMap[item.accountId] || '未知账户';
-          item.categoryName = categoryMap[item.categoryId] || '未知分类';
-          item.memberName = memberMap[item.memberId] || '未知成员';
-          item.merchantName = merchantMap[item.merchantId] || '';
-          item.projectName = projectMap[item.projectId] || '';
+        // 确保每条记录都有必要的字段
+        transactions.value = transactions.value.map(item => {
+          // 如果后端已经返回了名称字段，则直接使用
+          // 如果没有，则使用ID映射获取名称
+          return {
+            ...item,
+            accountName: item.accountName || accountMap[item.accountId] || '未知账户',
+            categoryName: item.categoryName || categoryMap[item.categoryId] || '未知分类',
+            memberName: item.memberName || memberMap[item.memberId] || '未知成员',
+            merchantName: item.merchantName || merchantMap[item.merchantId] || '',
+            projectName: item.projectName || projectMap[item.projectId] || ''
+          };
         });
       };
       
