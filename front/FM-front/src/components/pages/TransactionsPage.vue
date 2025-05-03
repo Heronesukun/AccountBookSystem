@@ -1,1020 +1,1244 @@
 <template>
-    <div class="transactions-container">
-      <!-- 顶部统计信息 -->
-      <div class="summary-header">
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-card shadow="hover" class="balance-card">
-              <div class="card-title">结余</div>
-              <div class="card-amount">{{ formatAmount(balance) }}</div>
-            </el-card>
-          </el-col>
-          <el-col :span="8">
-            <el-card shadow="hover" class="income-card">
-              <div class="card-title">收入</div>
-              <div class="card-amount">{{ formatAmount(income) }}</div>
-            </el-card>
-          </el-col>
-          <el-col :span="8">
-            <el-card shadow="hover" class="expense-card">
-              <div class="card-title">支出</div>
-              <div class="card-amount">{{ formatAmount(expense) }}</div>
-            </el-card>
-          </el-col>
-        </el-row>
+  <div class="transactions-page">
+    <!-- 顶部统计卡片 -->
+    <div class="summary-cards">
+      <el-card class="summary-card balance">
+        <div class="card-title">结余</div>
+        <div class="card-amount">{{ formatCurrency(totalBalance) }}</div>
+      </el-card>
+      <el-card class="summary-card income">
+        <div class="card-title">收入</div>
+        <div class="card-amount">{{ formatCurrency(totalIncome) }}</div>
+      </el-card>
+      <el-card class="summary-card expense">
+        <div class="card-title">支出</div>
+        <div class="card-amount">{{ formatCurrency(totalExpense) }}</div>
+      </el-card>
+    </div>
+
+    <!-- 操作栏 -->
+    <div class="action-bar">
+      <div class="left-actions">
+        <!-- 新增记录按钮 -->
+        <el-button type="primary" @click="openAddRecordDrawer">
+          <i class="el-icon-plus"></i> 新增记录
+        </el-button>
+        <!-- 批量删除按钮 -->
+        <el-button type="danger" :disabled="selectedRecords.length === 0" @click="confirmBatchDelete">
+          <i class="el-icon-delete"></i> 批量删除
+        </el-button>
       </div>
-  
-      <!-- 搜索和筛选区域 -->
-      <div class="search-filter-area">
-        <el-row :gutter="20">
-          <el-col :span="16">
-            <el-input
-              v-model="searchKeyword"
-              placeholder="搜索交易记录"
-              prefix-icon="el-icon-search"
-              @keyup.enter.native="searchRecords"
-            >
-              <template #append>
-                <el-button @click="searchRecords">搜索</el-button>
-              </template>
-            </el-input>
-          </el-col>
-          <el-col :span="8" class="filter-buttons">
-            <el-button @click="toggleFilterPanel">
-              筛选
-              <i :class="showFilterPanel ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
-            </el-button>
-            <el-button @click="resetFilters">重置</el-button>
-            <el-button type="primary" @click="openAddRecordDrawer">添加记录</el-button>
-          </el-col>
-        </el-row>
-  
-        <!-- 筛选面板 -->
-        <el-collapse-transition>
-          <div v-show="showFilterPanel" class="filter-panel">
-            <el-form :model="filterForm" label-width="80px" size="small">
-              <el-row :gutter="20">
-                <el-col :span="8">
-                  <el-form-item label="日期范围">
-                    <el-date-picker
-                      v-model="filterForm.dateRange"
-                      type="daterange"
-                      range-separator="至"
-                      start-placeholder="开始日期"
-                      end-placeholder="结束日期"
-                      format="YYYY-MM-DD"
-                      value-format="YYYY-MM-DD"
-                      style="width: 100%"
-                    ></el-date-picker>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="类型">
-                    <el-select v-model="filterForm.type" placeholder="选择类型" style="width: 100%">
-                      <el-option label="全部" value=""></el-option>
-                      <el-option label="收入" value="income"></el-option>
-                      <el-option label="支出" value="expense"></el-option>
-                      <el-option label="转账" value="transfer"></el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="账户">
-                    <el-select v-model="filterForm.accountId" placeholder="选择账户" style="width: 100%">
-                      <el-option label="全部" value=""></el-option>
-                      <el-option
-                        v-for="account in accounts"
-                        :key="account.id"
-                        :label="account.name"
-                        :value="account.id"
-                      ></el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row :gutter="20">
-                <el-col :span="8">
-                  <el-form-item label="分类">
-                    <el-select v-model="filterForm.categoryId" placeholder="选择分类" style="width: 100%">
-                      <el-option label="全部" value=""></el-option>
-                      <el-option
-                        v-for="category in categories"
-                        :key="category.id"
-                        :label="category.name"
-                        :value="category.id"
-                      ></el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="成员">
-                    <el-select v-model="filterForm.memberId" placeholder="选择成员" style="width: 100%">
-                      <el-option label="全部" value=""></el-option>
-                      <el-option
-                        v-for="member in members"
-                        :key="member.id"
-                        :label="member.name"
-                        :value="member.id"
-                      ></el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="金额范围">
-                    <el-row :gutter="10">
-                      <el-col :span="11">
-                        <el-input v-model="filterForm.minAmount" placeholder="最小值"></el-input>
-                      </el-col>
-                      <el-col :span="2" style="text-align: center">-</el-col>
-                      <el-col :span="11">
-                        <el-input v-model="filterForm.maxAmount" placeholder="最大值"></el-input>
-                      </el-col>
-                    </el-row>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="24" style="text-align: right">
-                  <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-                </el-col>
-              </el-row>
-            </el-form>
-          </div>
-        </el-collapse-transition>
+
+      <div class="right-actions">
+        <!-- 搜索框 -->
+        <el-input
+          placeholder="搜索记录..."
+          v-model="searchKeyword"
+          class="search-input"
+          prefix-icon="el-icon-search"
+          clearable
+          @clear="handleSearch"
+          @keyup.enter.native="handleSearch"
+        >
+          <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
+        </el-input>
+        
+        <!-- 筛选按钮 -->
+        <el-button @click="showFilters = !showFilters">
+          <i class="el-icon-s-operation"></i> 筛选
+          <i :class="showFilters ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+        </el-button>
       </div>
-  
-      <!-- 主要内容区域 -->
-      <div class="main-content">
-        <el-row :gutter="20">
-          <!-- 左侧汇总区域 -->
-          <el-col :span="6">
-            <div class="summary-section">
-              <div class="summary-header">
-                <h3>汇总方式</h3>
-                <el-radio-group v-model="summaryType" @change="changeSummaryType">
-                  <el-radio-button label="year">年</el-radio-button>
-                  <el-radio-button label="month">月</el-radio-button>
-                  <el-radio-button label="week">周</el-radio-button>
-                  <el-radio-button label="day">日</el-radio-button>
-                </el-radio-group>
-              </div>
-              
-              <div class="summary-content">
-                <el-date-picker
-                  v-if="summaryType === 'year'"
-                  v-model="summaryDateRange"
-                  type="year"
-                  placeholder="选择年份"
-                  @change="fetchSummaryData"
-                  style="width: 100%; margin-bottom: 15px"
-                ></el-date-picker>
-                
-                <el-date-picker
-                  v-if="summaryType === 'month'"
-                  v-model="summaryDateRange"
-                  type="month"
-                  placeholder="选择月份"
-                  @change="fetchSummaryData"
-                  style="width: 100%; margin-bottom: 15px"
-                ></el-date-picker>
-                
-                <el-date-picker
-                  v-if="summaryType === 'week' || summaryType === 'day'"
-                  v-model="summaryDateRange"
-                  :type="summaryType === 'week' ? 'week' : 'date'"
-                  :placeholder="summaryType === 'week' ? '选择周' : '选择日期'"
-                  @change="fetchSummaryData"
-                  style="width: 100%; margin-bottom: 15px"
-                ></el-date-picker>
-                
-                <!-- 汇总数据展示 -->
-                <div v-if="summaryData.length > 0" class="summary-chart">
-                  <h4>{{ getSummaryTitle() }}</h4>
-                  <el-table :data="summaryData" style="width: 100%" :max-height="400">
-                    <el-table-column :prop="summaryLabelField" :label="getSummaryLabelTitle()"></el-table-column>
-                    <el-table-column prop="income" label="收入">
-                      <template #default="scope">
-                        <span class="income-text">{{ formatAmount(scope.row.income) }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="expense" label="支出">
-                      <template #default="scope">
-                        <span class="expense-text">{{ formatAmount(scope.row.expense) }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="balance" label="结余">
-                      <template #default="scope">
-                        <span :class="scope.row.balance >= 0 ? 'income-text' : 'expense-text'">
-                          {{ formatAmount(scope.row.balance) }}
-                        </span>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-                <el-empty v-else description="暂无汇总数据"></el-empty>
-              </div>
-            </div>
-          </el-col>
-          
-          <!-- 右侧流水记录区域 -->
-          <el-col :span="18">
-            <div class="transactions-section">
-              <h3>流水记录</h3>
-              <el-table
-                :data="transactions"
-                style="width: 100%"
-                :max-height="600"
-                v-loading="loading"
-              >
-                <el-table-column prop="date" label="日期" width="100">
-                  <template #default="scope">
-                    {{ formatDate(scope.row.date) }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="type" label="类型" width="80">
-                  <template #default="scope">
-                    <el-tag
-                      :type="scope.row.type === 'income' ? 'success' : scope.row.type === 'expense' ? 'danger' : 'info'"
-                      size="small"
-                    >
-                      {{ getTypeText(scope.row.type) }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="categoryName" label="分类" width="120"></el-table-column>
-                <el-table-column prop="accountName" label="账户" width="120"></el-table-column>
-                <el-table-column prop="amount" label="金额" width="120">
-                  <template #default="scope">
-                    <span :class="scope.row.type === 'income' ? 'income-text' : 'expense-text'">
-                      {{ formatAmount(scope.row.amount) }}
-                    </span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="memberName" label="成员" width="100"></el-table-column>
-                <el-table-column prop="merchantName" label="商家" width="120"></el-table-column>
-                <el-table-column prop="projectName" label="项目" width="120"></el-table-column>
-                <el-table-column prop="remark" label="备注"></el-table-column>
-                <el-table-column fixed="right" label="操作" width="120">
-                  <template #default="scope">
-                    <el-button type="text" size="small" @click="editRecord(scope.row)">编辑</el-button>
-                    <el-button type="text" size="small" @click="deleteRecord(scope.row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-              
-              <!-- 分页 -->
-              <div class="pagination-container">
-                <el-pagination
-                  @size-change="handleSizeChange"
-                  @current-change="handleCurrentChange"
-                  :current-page="currentPage"
-                  :page-sizes="[10, 20, 50, 100]"
-                  :page-size="pageSize"
-                  layout="total, sizes, prev, pager, next, jumper"
-                  :total="total"
-                ></el-pagination>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
-      
-      <!-- 编辑记录对话框 -->
-      <el-dialog
-        :title="editingRecord.id ? '编辑记录' : '添加记录'"
-        v-model="showEditDialog"
-        width="50%"
-      >
-        <el-form :model="editingRecord" label-width="80px" :rules="rules" ref="recordForm">
-          <el-form-item label="类型" prop="type">
-            <el-select v-model="editingRecord.type" placeholder="选择类型" style="width: 100%">
-              <el-option label="收入" value="income"></el-option>
-              <el-option label="支出" value="expense"></el-option>
-              <el-option label="转账" value="transfer"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="日期" prop="date">
+    </div>
+
+    <!-- 筛选面板 -->
+    <el-collapse-transition>
+      <div v-show="showFilters" class="filter-panel">
+        <el-form :inline="true" class="filter-form">
+          <el-form-item label="日期范围">
             <el-date-picker
-              v-model="editingRecord.date"
-              type="datetime"
-              placeholder="选择日期时间"
-              style="width: 100%"
-              format="YYYY-MM-DD HH:mm:ss"
-              value-format="YYYY-MM-DD HH:mm:ss"
+              v-model="dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="yyyy-MM-dd"
+              value-format="yyyy-MM-dd"
             ></el-date-picker>
           </el-form-item>
-          <el-form-item label="金额" prop="amount">
-            <el-input v-model.number="editingRecord.amount" type="number" placeholder="输入金额"></el-input>
+          
+          <el-form-item label="类型">
+            <el-select v-model="filterType" placeholder="选择类型" clearable>
+              <el-option label="收入" value="收入"></el-option>
+              <el-option label="支出" value="支出"></el-option>
+            </el-select>
           </el-form-item>
-          <el-form-item label="分类" prop="categoryId">
-            <el-select v-model="editingRecord.categoryId" placeholder="选择分类" style="width: 100%">
+          
+          <el-form-item label="分类">
+            <el-cascader
+              v-model="filterCategory"
+              :options="categoryOptions"
+              placeholder="选择分类"
+              clearable
+            ></el-cascader>
+          </el-form-item>
+          
+          <el-form-item label="商家">
+            <el-select v-model="filterMerchant" placeholder="选择商家" filterable clearable>
               <el-option
-                v-for="category in categories"
-                :key="category.id"
-                :label="category.name"
-                :value="category.id"
+                v-for="item in merchantOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
               ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="账户" prop="accountId">
-            <el-select v-model="editingRecord.accountId" placeholder="选择账户" style="width: 100%">
+          
+          <el-form-item label="账户">
+            <el-select v-model="filterAccount" placeholder="选择账户" filterable clearable>
               <el-option
-                v-for="account in accounts"
-                :key="account.id"
-                :label="account.name"
-                :value="account.id"
+                v-for="item in accountOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
               ></el-option>
             </el-select>
-          </el-form-item>
-          <el-form-item label="成员" prop="memberId">
-            <el-select v-model="editingRecord.memberId" placeholder="选择成员" style="width: 100%">
-              <el-option
-                v-for="member in members"
-                :key="member.id"
-                :label="member.name"
-                :value="member.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="商家" prop="merchantId">
-            <el-select v-model="editingRecord.merchantId" placeholder="选择商家" style="width: 100%">
-              <el-option
-                v-for="merchant in merchants"
-                :key="merchant.id"
-                :label="merchant.name"
-                :value="merchant.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="项目" prop="projectId">
-            <el-select v-model="editingRecord.projectId" placeholder="选择项目" style="width: 100%">
-              <el-option
-                v-for="project in projects"
-                :key="project.id"
-                :label="project.name"
-                :value="project.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="备注" prop="remark">
-            <el-input v-model="editingRecord.remark" type="textarea" :rows="3" placeholder="输入备注"></el-input>
           </el-form-item>
         </el-form>
-        <template #footer>
-          <span class="dialog-footer">
-            <el-button @click="showEditDialog = false">取消</el-button>
-            <el-button type="primary" @click="saveRecord">保存</el-button>
+        
+        <div class="filter-actions">
+          <el-button type="primary" @click="applyFilters">应用筛选</el-button>
+          <el-button @click="resetFilters">重置</el-button>
+        </div>
+      </div>
+    </el-collapse-transition>
+
+    <!-- 主要内容区域 -->
+    <el-container class="main-container">
+      <!-- 左侧汇总面板 -->
+      <el-aside width="280px" class="summary-panel">
+        <div class="summary-header">
+          <h3>数据汇总</h3>
+          <el-select v-model="summaryType" placeholder="选择汇总类型" @change="fetchSummaryData">
+            <el-option label="按日" value="day"></el-option>
+            <el-option label="按周" value="week"></el-option>
+            <el-option label="按月" value="month"></el-option>
+            <el-option label="按年" value="year"></el-option>
+          </el-select>
+        </div>
+        
+        <el-scrollbar class="summary-scrollbar">
+          <div class="summary-content">
+            <!-- 汇总图表 -->
+            <div class="summary-chart">
+              <div ref="summaryChart" style="width: 100%; height: 200px;"></div>
+            </div>
+            
+            <!-- 汇总列表 -->
+            <div class="summary-list">
+              <div 
+                v-for="(item, index) in summaryData" 
+                :key="index" 
+                class="summary-item"
+                :class="{ active: selectedSummaryItem === index }"
+                @click="selectSummaryItem(index, item)"
+              >
+                <div class="summary-item-date">{{ formatSummaryDate(item.date, summaryType) }}</div>
+                <div class="summary-item-amounts">
+                  <span class="income-amount">{{ formatCurrency(item.income) }}</span>
+                  <span class="expense-amount">{{ formatCurrency(item.expense) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-scrollbar>
+      </el-aside>
+      
+      <!-- 右侧流水列表 -->
+      <el-main class="records-panel">
+        <el-table
+          v-loading="loading"
+          :data="recordsList"
+          style="width: 100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55"></el-table-column>
+          <el-table-column prop="date" label="日期" width="100" sortable>
+            <template #default="{row}">
+              {{ row && row.date ? formatDate(row.date) : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="type" label="类型" width="80">
+            <template #default="{row}">
+              <el-tag v-if="row" :type="row.type == '收入' ? 'success' : 'danger'">
+                {{ row && row.type == '收入' ? '收入' : '支出' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="categoryName" label="分类" width="120">
+            <template #default="{row}">
+              <span v-if="row">{{ row.categoryName || '-' }}</span>
+              <span v-if="row && row.childCategoryName"> / {{ row.childCategoryName }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="amount" label="金额" width="120" sortable>
+            <template #default="{row}">
+              <span v-if="row" :class="row.type == '收入' ? 'income-text' : 'expense-text'">
+                {{ formatCurrency(row.amount) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="merchantName" label="商家" width="120">
+            <template #default="{row}">
+              {{ row && row.merchantName ? row.merchantName : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="accountName" label="账户" width="120">
+            <template #default="{row}">
+              {{ row && row.accountCategoryName ? row.accountCategoryName : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="150">
+            <template #default="{row}">
+              {{ row && row.desc ? row.desc : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="scope">
+              <el-button type="text" size="small" @click="editRecord(scope.row)">编辑</el-button>
+              <el-button type="text" size="small" @click="viewRecordDetail(scope.row)">查看</el-button>
+              <el-button type="text" size="small" class="delete-btn" @click="confirmDeleteRecord(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <!-- 分页 -->
+        <div class="pagination-container">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="totalRecords"
+          ></el-pagination>
+        </div>
+      </el-main>
+    </el-container>
+
+    <!-- 记录详情对话框 -->
+    <el-dialog
+      title="记录详情"
+      :visible.sync="recordDetailVisible"
+      width="30%"
+    >
+      <div v-if="selectedRecord" class="record-detail">
+        <div class="detail-item">
+          <span class="label">日期:</span>
+          <span class="value">{{ formatDate(selectedRecord.date) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">类型:</span>
+          <span class="value">
+            <el-tag :type="selectedRecord.type == 1 ? 'success' : 'danger'">
+              {{ selectedRecord.type == 1 ? '收入' : '支出' }}
+            </el-tag>
           </span>
-        </template>
-      </el-dialog>
-    </div>
-  </template>
-  
-  <script>
-  import { ref, reactive, onMounted, computed, watch } from 'vue';
-  import generalTableApi from '@/api/generalTable.js';
-  import accountApi from '@/api/account.js';
-  import categoryApi from '@/api/category.js';
-  import bookMemberRequest from '@/api/bookMember.js';
-  import { ElMessage, ElMessageBox } from 'element-plus';
-  import dayjs from 'dayjs';
-  
-  export default {
-    name: 'TransactionsPage',
-    props: {
-      bookId: {
-        type: [String, Number],
-        required: true
+        </div>
+        <div class="detail-item">
+          <span class="label">分类:</span>
+          <span class="value">
+            {{ selectedRecord.categoryName }}
+            <span v-if="selectedRecord.childCategoryName"> / {{ selectedRecord.childCategoryName }}</span>
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="label">金额:</span>
+          <span class="value" :class="selectedRecord.type == 1 ? 'income-text' : 'expense-text'">
+            {{ formatCurrency(selectedRecord.amount) }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="label">商家:</span>
+          <span class="value">{{ selectedRecord.merchantName || '-' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">账户:</span>
+          <span class="value">{{ selectedRecord.accountName || '-' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">备注:</span>
+          <span class="value">{{ selectedRecord.remark || '-' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">创建时间:</span>
+          <span class="value">{{ formatDateTime(selectedRecord.createTime) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">更新时间:</span>
+          <span class="value">{{ formatDateTime(selectedRecord.updateTime) }}</span>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 记录抽屉 -->
+    <RecordDrawer
+      v-if="showRecordDrawer"
+      :visible="showRecordDrawer"
+      :recordData="editingRecord"
+      :isEdit="isEditMode"
+      :bookId="bookId"
+      @close="closeRecordDrawer"
+      @save="handleSaveRecord"
+    />
+  </div>
+</template>
+
+<script>
+import * as echarts from 'echarts';
+import generalTableApi from '@/api/generalTable.js';
+import categoryApi from '@/api/category.js';
+import merchantApi from '@/api/merchant.js';
+import accountApi from '@/api/account.js';
+import RecordDrawer from '../RecordDrawer.vue';
+
+export default {
+  name: 'TransactionsPage',
+  components: {
+    RecordDrawer
+  },
+  props: {
+    bookId: {
+      type: [String, Number],
+      required: true
+    }
+  },
+  data() {
+    return {
+      // 顶部统计数据
+      totalBalance: 0,
+      totalIncome: 0,
+      totalExpense: 0,
+      
+      // 筛选相关
+      showFilters: false,
+      searchKeyword: '',
+      dateRange: [],
+      filterType: '',
+      filterCategory: [],
+      filterMerchant: '',
+      filterAccount: '',
+      
+      // 选项数据
+      categoryOptions: [],
+      merchantOptions: [],
+      accountOptions: [],
+      
+      // 表格数据
+      loading: false,
+      recordsList: [],
+      selectedRecords: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalRecords: 0,
+      
+      // 汇总数据
+      summaryType: 'month',
+      summaryData: [],
+      selectedSummaryItem: null,
+      summaryChart: null,
+      
+      // 详情对话框
+      recordDetailVisible: false,
+      selectedRecord: null,
+      
+      // 记录抽屉
+      showRecordDrawer: false,
+      isEditMode: false,
+      editingRecord: null
+    };
+  },
+  created() {
+    this.fetchInitialData();
+  },
+  mounted() {
+    this.initSummaryChart();
+  },
+  methods: {
+    // 初始化数据
+    async fetchInitialData() {
+      this.loading = true;
+      try {
+        // 并行获取多个数据
+        await Promise.all([
+          this.fetchRecordsData(),
+          this.fetchCategoryOptions(),
+          this.fetchMerchantOptions(),
+          this.fetchAccountOptions(),
+          this.fetchSummaryData()
+        ]);
+      } catch (error) {
+        console.error('初始化数据失败:', error);
+        this.$message.error('获取数据失败，请稍后重试');
+      } finally {
+        this.loading = false;
       }
     },
-    setup(props) {
-      // 数据状态
-      const loading = ref(false);
-      const transactions = ref([]);
-      const accounts = ref([]);
-      const categories = ref([]);
-      const members = ref([]);
-      const merchants = ref([]);
-      const projects = ref([]);
-      const currentPage = ref(1);
-      const pageSize = ref(20);
-      const total = ref(0);
-      const income = ref(0);
-      const expense = ref(0);
-      const balance = ref(0);
-      
-      // 搜索和筛选
-      const searchKeyword = ref('');
-      const showFilterPanel = ref(false);
-      const filterForm = reactive({
-        dateRange: [],
-        type: '',
-        accountId: '',
-        categoryId: '',
-        memberId: '',
-        minAmount: '',
-        maxAmount: ''
-      });
-      
-      // 汇总相关
-      const summaryType = ref('month');
-      const summaryDateRange = ref(dayjs().format('YYYY-MM'));
-      const summaryData = ref([]);
-      const summaryLabelField = computed(() => {
-        switch (summaryType.value) {
-          case 'year': return 'year';
-          case 'month': return 'month';
-          case 'week': return 'week';
-          case 'day': return 'day';
-          default: return 'month';
+    
+    // 刷新数据（供父组件调用）
+    refreshData() {
+      this.fetchRecordsData();
+      this.fetchSummaryData();
+    },
+    
+    // 获取流水记录数据
+    async fetchRecordsData() {
+      console.log('Fetching records. User ID:', localStorage.getItem('userId'), 'Book ID:', this.bookId); // 添加日志确认 ID
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          console.error('User ID 或 Book ID 缺失，终止获取流水记录。'); // 添加错误日志
+          this.recordsList = []; // 确保列表为空
+          this.totalRecords = 0;
+          this.calculateTotals(); // 即使失败也计算一次总额（会是0）
+          return;
+
         }
-      });
-      
-      // 编辑记录
-      const showEditDialog = ref(false);
-      const editingRecord = reactive({
-        id: null,
-        bid: props.bookId,
-        userId: localStorage.getItem('userId'),
-        type: 'expense',
-        date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-        amount: '',
-        categoryId: '',
-        accountId: '',
-        memberId: '',
-        merchantId: '',
-        projectId: '',
-        remark: ''
-      });
-      
-      // 表单验证规则
-      const rules = {
-        type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-        date: [{ required: true, message: '请选择日期', trigger: 'change' }],
-        amount: [
-          { required: true, message: '请输入金额', trigger: 'blur' },
-          { type: 'number', message: '金额必须为数字', trigger: 'blur' }
-        ],
-        categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-        accountId: [{ required: true, message: '请选择账户', trigger: 'change' }]
-      };
-      
-      // 初始化数据
-      onMounted(() => {
-        fetchData();
-        fetchRelatedData();
-        fetchSummaryData();
-      });
-      
-      // 监听bookId变化
-      watch(() => props.bookId, (newVal) => {
-        if (newVal) {
-          fetchData();
-          fetchRelatedData();
-          fetchSummaryData();
-        }
-      });
-      
-      // 获取相关数据（账户、分类、成员等）
-      const fetchRelatedData = async () => {
-        if (!props.bookId) return;
         
-        try {
-          const userId = localStorage.getItem('userId');
-          
-          // 获取账户列表
-          const accountRes = await accountApi.getAccountList(props.bookId, userId);
-          if (accountRes.data && accountRes.data.data) {
-            accounts.value = accountRes.data.data;
-          }
-          
-          // 获取分类列表
-          const categoryRes = await categoryApi.getAllCategories(props.bookId, userId);
-          if (categoryRes.data && categoryRes.data.data) {
-            categories.value = categoryRes.data.data;
-          }
-          
-          // 获取成员列表
-          const memberRes = await bookMemberRequest.getBookMembers(props.bookId, userId);
-          if (memberRes.data && memberRes.data.data) {
-            members.value = memberRes.data.data;
-          }
-          
-          // 获取商家列表 (如果有merchant API)
-          try {
-            const merchantRes = await axios.get(`${config.mdBaseUrl}/merchant/list`, {
-              params: { bookId: props.bookId, userId },
-              headers: { token: localStorage.getItem('token') }
-            });
-            if (merchantRes.data && merchantRes.data.data) {
-              merchants.value = merchantRes.data.data;
-            }
-          } catch (error) {
-            console.error('获取商家列表失败:', error);
-          }
-          
-          // 获取项目列表 (如果有project API)
-          try {
-            const projectRes = await axios.get(`${config.mdBaseUrl}/project/list`, {
-              params: { bookId: props.bookId, userId },
-              headers: { token: localStorage.getItem('token') }
-            });
-            if (projectRes.data && projectRes.data.data) {
-              projects.value = projectRes.data.data;
-            }
-          } catch (error) {
-            console.error('获取项目列表失败:', error);
-          }
-          
-        } catch (error) {
-          console.error('获取相关数据失败:', error);
-          ElMessage.error('获取相关数据失败，请重试');
-        }
-      };
-      
-      // 获取流水记录数据
-      const fetchData = async () => {
-        if (!props.bookId) return;
+        const params = {
+          bookId: this.bookId,
+          userId: userId,
+          page: this.currentPage,
+          pageSize: this.pageSize
+        };
         
-        loading.value = true;
-        try {
-          const userId = localStorage.getItem('userId');
-          
-          // 构建查询参数
-          const params = {
-            bid: props.bookId,
-            userId: userId,
-            page: currentPage.value,
-            size: pageSize.value
-          };
-          
-          // 添加筛选条件
-          if (filterForm.dateRange && filterForm.dateRange.length === 2) {
-            params.startDate = filterForm.dateRange[0];
-            params.endDate = filterForm.dateRange[1];
-          }
-          
-          if (filterForm.type) params.type = filterForm.type;
-          if (filterForm.accountId) params.accountId = filterForm.accountId;
-          if (filterForm.categoryId) params.categoryId = filterForm.categoryId;
-          if (filterForm.memberId) params.memberId = filterForm.memberId;
-          if (filterForm.minAmount) params.minAmount = filterForm.minAmount;
-          if (filterForm.maxAmount) params.maxAmount = filterForm.maxAmount;
-          if (searchKeyword.value) params.keyword = searchKeyword.value;
-          
-          const response = await generalTableApi.searchGeneralTables(params);
-          
-          if (response.data.code === 200) {
-            const data = response.data.data;
-            transactions.value = data.records || [];
-            total.value = data.total || 0;
-            
-            // 处理数据，确保所有字段都存在
-            processTransactionData();
-            
-            // 计算总收入和支出
-            calculateSummary();
-          } else {
-            ElMessage.error(response.data.message || '获取流水记录失败');
-          }
-        } catch (error) {
-          console.error('获取流水记录出错:', error);
-          ElMessage.error('获取流水记录失败');
-        } finally {
-          loading.value = false;
+        // 添加筛选条件
+        if (this.searchKeyword) {
+          params.keyword = this.searchKeyword;
         }
-      };
-      
-      // 处理流水数据，确保所有需要的字段都存在
-      const processTransactionData = () => {
-        if (!transactions.value || transactions.value.length === 0) return;
         
-        // 创建ID到名称的映射
-        const accountMap = {};
-        const categoryMap = {};
-        const memberMap = {};
-        const merchantMap = {};
-        const projectMap = {};
+        if (this.dateRange && this.dateRange.length === 2) {
+          params.startDate = this.dateRange[0];
+          params.endDate = this.dateRange[1];
+        }
         
-        accounts.value.forEach(item => { accountMap[item.id] = item.name; });
-        categories.value.forEach(item => { categoryMap[item.id] = item.name; });
-        members.value.forEach(item => { memberMap[item.id] = item.name; });
-        merchants.value.forEach(item => { merchantMap[item.id] = item.name; });
-        projects.value.forEach(item => { projectMap[item.id] = item.name; });
+        if (this.filterType) {
+          params.type = this.filterType;
+        }
         
-        // 确保每条记录都有必要的字段
-        transactions.value = transactions.value.map(item => {
-          // 如果后端已经返回了名称字段，则直接使用
-          // 如果没有，则使用ID映射获取名称
-          return {
-            ...item,
-            accountName: item.accountName || accountMap[item.accountId] || '未知账户',
-            categoryName: item.categoryName || categoryMap[item.categoryId] || '未知分类',
-            memberName: item.memberName || memberMap[item.memberId] || '未知成员',
-            merchantName: item.merchantName || merchantMap[item.merchantId] || '',
-            projectName: item.projectName || projectMap[item.projectId] || ''
-          };
-        });
-      };
-      
-      // 计算总收入和支出
-      const calculateSummary = () => {
-        let totalIncome = 0;
-        let totalExpense = 0;
+        if (this.filterCategory && this.filterCategory.length > 0) {
+          if (this.filterCategory.length === 1) {
+            params.categoryId = this.filterCategory[0];
+          } else if (this.filterCategory.length === 2) {
+            params.categoryId = this.filterCategory[0];
+            params.childCategoryId = this.filterCategory[1];
+          }
+        }
         
-        transactions.value.forEach(item => {
-          if (item.type === 'income') {
-            totalIncome += parseFloat(item.amount);
-          } else if (item.type === 'expense') {
-            totalExpense += parseFloat(item.amount);
-          }
-        });
+        if (this.filterMerchant) {
+          params.merchantId = this.filterMerchant;
+        }
         
-        income.value = totalIncome;
-        expense.value = totalExpense;
-        balance.value = totalIncome - totalExpense;
-      };
-      
-      // 获取汇总数据
-      const fetchSummaryData = async () => {
-        if (!props.bookId) return;
+        if (this.filterAccount) {
+          params.accountId = this.filterAccount;
+        }
         
-        try {
-          const userId = localStorage.getItem('userId');
-          let startDate, endDate;
-          
-          // 根据汇总类型和选择的日期范围确定开始和结束日期
-          if (summaryDateRange.value) {
-            const date = dayjs(summaryDateRange.value);
-            
-            switch (summaryType.value) {
-              case 'year':
-                startDate = date.startOf('year').format('YYYY-MM-DD');
-                endDate = date.endOf('year').format('YYYY-MM-DD');
-                break;
-              case 'month':
-                startDate = date.startOf('month').format('YYYY-MM-DD');
-                endDate = date.endOf('month').format('YYYY-MM-DD');
-                break;
-              case 'week':
-                startDate = date.startOf('week').format('YYYY-MM-DD');
-                endDate = date.endOf('week').format('YYYY-MM-DD');
-                break;
-              case 'day':
-                startDate = date.format('YYYY-MM-DD');
-                endDate = date.format('YYYY-MM-DD');
-                break;
-            }
-          } else {
-            // 默认为当前月
-            const date = dayjs();
-            startDate = date.startOf('month').format('YYYY-MM-DD');
-            endDate = date.endOf('month').format('YYYY-MM-DD');
-          }
-          
-          const response = await generalTableApi.getSummaryByDate(
-            props.bookId,
-            userId,
-            summaryType.value,
-            startDate,
-            endDate
-          );
-          
-          if (response.data.code === 200) {
-            summaryData.value = response.data.data;
-          } else {
-            ElMessage.error(response.data.message || '获取汇总数据失败');
-          }
-        } catch (error) {
-          console.error('获取汇总数据出错:', error);
-          ElMessage.error('获取汇总数据失败');
-        }
-      };
-      
-      // 切换筛选面板
-      const toggleFilterPanel = () => {
-        showFilterPanel.value = !showFilterPanel.value;
-      };
-      
-      // 重置筛选条件
-      const resetFilters = () => {
-        Object.keys(filterForm).forEach(key => {
-          if (key === 'dateRange') {
-            filterForm[key] = [];
-          } else {
-            filterForm[key] = '';
-          }
-        });
-        searchKeyword.value = '';
-        fetchData();
-      };
-      
-      // 应用筛选条件
-      const applyFilters = () => {
-        currentPage.value = 1;
-        fetchData();
-      };
-      
-      // 搜索记录
-      const searchRecords = () => {
-        currentPage.value = 1;
-        fetchData();
-      };
-      
-      // 分页处理
-      const handleSizeChange = (size) => {
-        pageSize.value = size;
-        fetchData();
-      };
-      
-      const handleCurrentChange = (page) => {
-        currentPage.value = page;
-        fetchData();
-      };
-      
-      // 编辑记录
-      const editRecord = (record) => {
-        Object.keys(editingRecord).forEach(key => {
-          if (key in record) {
-            editingRecord[key] = record[key];
-          }
-        });
-        showEditDialog.value = true;
-      };
-      
-      // 打开添加记录抽屉
-      const openAddRecordDrawer = () => {
-        // 重置编辑记录
-        Object.keys(editingRecord).forEach(key => {
-          if (key === 'id') {
-            editingRecord[key] = null;
-          } else if (key === 'bid') {
-            editingRecord[key] = props.bookId;
-          } else if (key === 'userId') {
-            editingRecord[key] = localStorage.getItem('userId');
-          } else if (key === 'type') {
-            editingRecord[key] = 'expense';
-          } else if (key === 'date') {
-            editingRecord[key] = dayjs().format('YYYY-MM-DD HH:mm:ss');
-          } else {
-            editingRecord[key] = '';
-          }
-        });
-        showEditDialog.value = true;
-      };
-      
-      // 保存记录
-      const saveRecord = async () => {
-        try {
-          if (editingRecord.id) {
-            // 更新记录
-            const response = await generalTableApi.updateGeneralTable(editingRecord);
-            if (response.data.code === 200) {
-              ElMessage.success('更新记录成功');
-              showEditDialog.value = false;
-              fetchData();
-            } else {
-              ElMessage.error(response.data.message || '更新记录失败');
-            }
-          } else {
-            // 添加记录
-            const response = await generalTableApi.addGeneralTable(editingRecord);
-            if (response.data.code === 200) {
-              ElMessage.success('添加记录成功');
-              showEditDialog.value = false;
-              fetchData();
-            } else {
-              ElMessage.error(response.data.message || '添加记录失败');
-            }
-          }
-        } catch (error) {
-          console.error('保存记录出错:', error);
-          ElMessage.error('保存记录失败');
-        }
-      };
-      
-      // 删除记录
-      const deleteRecord = (record) => {
-        ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(async () => {
-          try {
-            const userId = localStorage.getItem('userId');
-            const response = await generalTableApi.deleteGeneralTable(record.id, userId);
-            if (response.data.code === 200) {
-              ElMessage.success('删除记录成功');
-              fetchData();
-            } else {
-              ElMessage.error(response.data.message || '删除记录失败');
-            }
-          } catch (error) {
-            console.error('删除记录出错:', error);
-            ElMessage.error('删除记录失败');
-          }
-        }).catch(() => {
-          // 取消删除
-        });
-      };
-      
-      // 更改汇总类型
-      const changeSummaryType = () => {
-        // 根据汇总类型重置日期选择器的值
-        switch (summaryType.value) {
-          case 'year':
-            summaryDateRange.value = dayjs().format('YYYY');
-            break;
-          case 'month':
-            summaryDateRange.value = dayjs().format('YYYY-MM');
-            break;
-          case 'week':
-          case 'day':
-            summaryDateRange.value = dayjs().format('YYYY-MM-DD');
-            break;
-        }
-        fetchSummaryData();
-      };
-      
-      // 获取汇总标题
-      const getSummaryTitle = () => {
-        switch (summaryType.value) {
-          case 'year': return '年度汇总';
-          case 'month': return '月度汇总';
-          case 'week': return '周汇总';
-          case 'day': return '日汇总';
-          default: return '汇总数据';
-        }
-      };
-      
-      // 获取汇总标签标题
-      const getSummaryLabelTitle = () => {
-        switch (summaryType.value) {
-          case 'year': return '年份';
-          case 'month': return '月份';
-          case 'week': return '周';
-          case 'day': return '日期';
-          default: return '时间';
-        }
-      };
-      
-      // 格式化金额
-      const formatAmount = (amount) => {
-        return parseFloat(amount).toFixed(2);
-      };
-      
-      // 格式化日期
-      const formatDate = (date) => {
-        return dayjs(date).format('YYYY-MM-DD');
-      };
-      
-      // 获取类型文本
-      const getTypeText = (type) => {
-        switch (type) {
-          case 'income': return '收入';
-          case 'expense': return '支出';
-          case 'transfer': return '转账';
-          default: return '未知';
-        }
-      };
-      
-      return {
-        loading,
-        transactions,
-        accounts,
-        categories,
-        members,
-        merchants,
-        projects,
-        currentPage,
-        pageSize,
-        total,
-        income,
-        expense,
-        balance,
-        searchKeyword,
-        showFilterPanel,
-        filterForm,
-        summaryType,
-        summaryDateRange,
-        summaryData,
-        summaryLabelField,
-        showEditDialog,
-        editingRecord,
-        rules,
-        toggleFilterPanel,
-        resetFilters,
-        applyFilters,
-        searchRecords,
-        handleSizeChange,
-        handleCurrentChange,
-        editRecord,
-        openAddRecordDrawer,
-        saveRecord,
-        deleteRecord,
-        changeSummaryType,
-        getSummaryTitle,
-        getSummaryLabelTitle,
-        formatAmount,
-        formatDate,
-        getTypeText
-      };
+        console.log('请求参数:', params); // 添加请求参数日志
+        const response = await generalTableApi.searchGeneralTables(params);
+        console.log('完整响应:', response); // 打印完整响应
+        
+        if (response.data && response.data.code === 200) {
+  // 检查返回的数据结构
+  if (Array.isArray(response.data.data)) {
+    // 直接使用数组
+    this.recordsList = [...response.data.data];
+    this.totalRecords = response.data.data.length;
+  } else if (response.data.data && response.data.data.records) {
+    // 使用分页对象中的records数组
+    const records = response.data.data.records || [];
+    this.recordsList = Array.isArray(records) ? [...records] : [];
+    this.totalRecords = response.data.data.total || 0;
+  } else {
+    // 处理其他可能的数据结构
+    console.error('未预期的数据结构:', response.data.data);
+    this.recordsList = [];
+    this.totalRecords = 0;
+  }
+  console.log('处理后的表格数据:', this.recordsList);
+  this.calculateTotals();
+} else {
+      console.error('API返回异常:', response.data);
     }
-  };
-  </script>
-  
-  <style scoped>
-  .transactions-container {
-    padding: 20px;
+      } catch (error) {
+        console.error('获取流水记录失败:', error);
+        this.$message.error('获取流水记录失败，请稍后重试');
+      }
+    },
+    
+    // 获取分类选项
+    async fetchCategoryOptions() {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          return;
+        }
+        
+        const response = await categoryApi.getAllCategories(this.bookId, userId);
+        
+        if (response.data && response.data.code === 200) {
+          this.processCategoryOptions(response.data.data);
+        }
+      } catch (error) {
+        console.error('获取分类选项失败:', error);
+      }
+    },
+    
+    // 处理分类选项数据结构
+    processCategoryOptions(categories) {
+      if (!categories || !Array.isArray(categories)) {
+        return;
+      }
+      
+      // 筛选出父分类
+      const parentCategories = categories.filter(item => !item.parentId);
+      
+      this.categoryOptions = parentCategories.map(parent => {
+        // 查找当前父分类的所有子分类
+        const children = categories.filter(item => item.parentId === parent.id);
+        
+        return {
+          value: parent.id,
+          label: parent.name,
+          children: children.map(child => ({
+            value: child.id,
+            label: child.name
+          }))
+        };
+      });
+    },
+    
+    // 获取商家选项
+    async fetchMerchantOptions() {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          return;
+        }
+        
+        const response = await merchantApi.getMerchantList(this.bookId, userId);
+        
+        if (response.data && response.data.code === 200) {
+          this.merchantOptions = response.data.data.records || [];
+        }
+      } catch (error) {
+        console.error('获取商家选项失败:', error);
+      }
+    },
+    
+    // 获取账户选项
+    async fetchAccountOptions() {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          return;
+        }
+        
+        // 假设有accountApi，如果没有需要实现
+        const response = await accountApi.getAccountList(this.bookId, userId);
+        
+        if (response.data && response.data.code === 200) {
+          this.accountOptions = response.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取账户选项失败:', error);
+      }
+    },
+    
+    // 获取汇总数据
+    async fetchSummaryData() {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          return;
+        }
+        
+        // 设置默认日期范围为最近一年
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        
+        const formattedStartDate = this.formatDateForApi(startDate);
+        const formattedEndDate = this.formatDateForApi(endDate);
+        
+        const response = await generalTableApi.getSummaryByDate(
+          this.bookId,
+          userId,
+          this.summaryType,
+          formattedStartDate,
+          formattedEndDate
+        );
+        
+        if (response.data && response.data.code === 200) {
+          this.summaryData = response.data.data || [];
+          this.updateSummaryChart();
+        }
+      } catch (error) {
+        console.error('获取汇总数据失败:', error);
+      }
+    },
+    
+    // 初始化汇总图表
+    initSummaryChart() {
+      if (this.$refs.summaryChart) {
+        this.summaryChart = echarts.init(this.$refs.summaryChart);
+        this.updateSummaryChart();
+      }
+    },
+    
+    // 更新汇总图表
+    updateSummaryChart() {
+      if (!this.summaryChart || !this.summaryData.length) {
+        return;
+      }
+      
+      const dates = this.summaryData.map(item => this.formatSummaryDate(item.date, this.summaryType));
+      const incomes = this.summaryData.map(item => item.income);
+      const expenses = this.summaryData.map(item => item.expense);
+      
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        legend: {
+          data: ['收入', '支出']
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: dates,
+          axisLabel: {
+            interval: 0,
+            rotate: 30,
+            formatter: function(value) {
+              if (value.length > 4) {
+                return value.substring(0, 4) + '...';
+              }
+              return value;
+            }
+          }
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            name: '收入',
+            type: 'bar',
+            stack: 'total',
+            data: incomes,
+            itemStyle: {
+              color: '#67C23A'
+            }
+          },
+          {
+            name: '支出',
+            type: 'bar',
+            stack: 'total',
+            data: expenses,
+            itemStyle: {
+              color: '#F56C6C'
+            }
+          }
+        ]
+      };
+      
+      this.summaryChart.setOption(option);
+    },
+    
+    // 计算总额
+    calculateTotals() {
+      // 重置总额
+      this.totalIncome = 0;
+      this.totalExpense = 0;
+      
+      // 遍历记录计算总收入和总支出
+      this.recordsList.forEach(record => {
+        if (record.type == '收入') { // 收入
+          this.totalIncome += parseFloat(record.amount || 0);
+        } else if (record.type == '支出') { // 支出
+          this.totalExpense += parseFloat(record.amount || 0);
+        }
+      });
+      
+      // 计算结余
+      this.totalBalance = this.totalIncome + this.totalExpense;
+    },
+    
+    // 处理搜索
+    handleSearch() {
+      this.currentPage = 1; // 重置到第一页
+      this.fetchRecordsData();
+    },
+    
+    // 应用筛选
+    applyFilters() {
+      this.currentPage = 1; // 重置到第一页
+      this.fetchRecordsData();
+    },
+    
+    // 重置筛选
+    resetFilters() {
+      this.dateRange = [];
+      this.filterType = '';
+      this.filterCategory = [];
+      this.filterMerchant = '';
+      this.filterAccount = '';
+      this.searchKeyword = '';
+      this.currentPage = 1;
+      this.fetchRecordsData();
+    },
+    
+    // 处理页码变化
+    handleCurrentChange(page) {
+      this.currentPage = page;
+      this.fetchRecordsData();
+    },
+    
+    // 处理每页条数变化
+    handleSizeChange(size) {
+      this.pageSize = size;
+      this.currentPage = 1; // 重置到第一页
+      this.fetchRecordsData();
+    },
+    
+    // 处理选择记录变化
+    handleSelectionChange(selection) {
+      this.selectedRecords = selection;
+    },
+    
+    // 查看记录详情
+    viewRecordDetail(record) {
+      this.selectedRecord = record;
+      this.recordDetailVisible = true;
+    },
+    
+    // 编辑记录
+    editRecord(record) {
+      this.isEditMode = true;
+      this.editingRecord = JSON.parse(JSON.stringify(record)); // 深拷贝避免直接修改
+      this.showRecordDrawer = true;
+    },
+    
+    // 打开添加记录抽屉
+    openAddRecordDrawer() {
+      this.isEditMode = false;
+      this.editingRecord = {
+        type: '支出', // 默认为支出
+        date: this.formatDateForApi(new Date()) // 默认为今天
+      };
+      this.showRecordDrawer = true;
+    },
+    
+    // 关闭记录抽屉
+    closeRecordDrawer() {
+      this.showRecordDrawer = false;
+      this.editingRecord = null;
+    },
+    
+    
+    // 确认删除记录
+    confirmDeleteRecord(record) {
+      this.$confirm('确定要删除这条记录吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.deleteRecord(record.id);
+      }).catch(() => {
+        // 取消删除
+      });
+    },
+    
+    // 删除记录
+    async deleteRecord(id) {
+      try {
+        const userId = localStorage.getItem('userId');
+        const response = await generalTableApi.deleteGeneralTable(id, userId);
+        
+        if (response.data && response.data.code === 200) {
+          this.$message.success('删除成功');
+          this.fetchRecordsData();
+          this.fetchSummaryData();
+        } else {
+          this.$message.error(response.data.message || '删除失败');
+        }
+      } catch (error) {
+        console.error('删除记录失败:', error);
+        this.$message.error('删除记录失败，请稍后重试');
+      }
+    },
+    
+    // 确认批量删除
+    confirmBatchDelete() {
+      if (this.selectedRecords.length === 0) {
+        return;
+      }
+      
+      this.$confirm(`确定要删除选中的 ${this.selectedRecords.length} 条记录吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.batchDeleteRecords();
+      }).catch(() => {
+        // 取消删除
+      });
+    },
+    
+
+
+    
+    // 格式化日期为API所需格式 (YYYY-MM-DD)
+    formatDateForApi(date) {
+      if (!date) return '';
+      
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    },
+    
+    // 格式化日期显示 (YYYY-MM-DD)
+    formatDate(dateStr) {
+      if (!dateStr) return '-';
+      
+      // 如果已经是格式化的字符串，直接返回
+      if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateStr;
+      }
+      
+      const date = new Date(dateStr);
+      return this.formatDateForApi(date);
+    },
+    
+    // 格式化日期时间显示
+    formatDateTime(dateTimeStr) {
+      if (!dateTimeStr) return '-';
+      
+      const date = new Date(dateTimeStr);
+      const formattedDate = this.formatDateForApi(date);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      
+      return `${formattedDate} ${hours}:${minutes}:${seconds}`;
+    },
+    
+    // 格式化汇总日期显示
+    formatSummaryDate(dateStr, type) {
+      if (!dateStr) return '-';
+      
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      switch (type) {
+        case 'day':
+          return `${year}-${month}-${day}`;
+        case 'week':
+          return `${year}年第${this.getWeekNumber(date)}周`;
+        case 'month':
+          return `${year}-${month}`;
+        case 'year':
+          return `${year}`;
+        default:
+          return dateStr;
+      }
+    },
+    
+    // 获取周数
+    getWeekNumber(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+      const week1 = new Date(d.getFullYear(), 0, 4);
+      return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    },
+    
+    // 获取周的开始日期
+    getWeekStartDate(date) {
+      const d = new Date(date);
+      const day = d.getDay() || 7; // 如果是周日，getDay()返回0，我们将其视为7
+      if (day !== 1) {
+        d.setDate(d.getDate() - day + 1);
+      }
+      return this.formatDateForApi(d);
+    },
+    
+    // 获取周的结束日期
+    getWeekEndDate(date) {
+      const d = new Date(date);
+      const day = d.getDay() || 7;
+      if (day !== 7) {
+        d.setDate(d.getDate() + (7 - day));
+      }
+      return this.formatDateForApi(d);
+    },
+    
+    // 获取月的开始日期
+    getMonthStartDate(date) {
+      const d = new Date(date);
+      d.setDate(1);
+      return this.formatDateForApi(d);
+    },
+    
+    // 获取月的结束日期
+    getMonthEndDate(date) {
+      const d = new Date(date);
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(0);
+      return this.formatDateForApi(d);
+    },
+    
+    // 获取年的开始日期
+    getYearStartDate(date) {
+      const d = new Date(date);
+      d.setMonth(0);
+      d.setDate(1);
+      return this.formatDateForApi(d);
+    },
+    
+    // 获取年的结束日期
+    getYearEndDate(date) {
+      const d = new Date(date);
+      d.setFullYear(d.getFullYear() + 1);
+      d.setMonth(0);
+      d.setDate(0);
+      return this.formatDateForApi(d);
+    },
+    
+    // 格式化货币显示
+    formatCurrency(value) {
+      if (value === undefined || value === null) return '¥0.00';
+      
+      const num = parseFloat(value);
+      return `¥${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    },
+
+    // 选择汇总项
+    selectSummaryItem(index, item) {
+      this.selectedSummaryItem = index;
+      
+      // 根据所选汇总项筛选数据
+      let startDate, endDate;
+      
+      if (this.summaryType === 'day') {
+        startDate = item.date;
+        endDate = item.date;
+      } else if (this.summaryType === 'week') {
+        // 周的开始日期和结束日期
+        startDate = item.startDate;
+        endDate = item.endDate;
+      } else if (this.summaryType === 'month') {
+        // 月的开始日期和结束日期
+        const date = new Date(item.date);
+        startDate = this.formatDateForApi(new Date(date.getFullYear(), date.getMonth(), 1));
+        endDate = this.formatDateForApi(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+      } else if (this.summaryType === 'year') {
+        // 年的开始日期和结束日期
+        const year = item.date;
+        startDate = `${year}-01-01`;
+        endDate = `${year}-12-31`;
+      }
+      
+      this.dateRange = [startDate, endDate];
+      this.applyFilters();
+    },
+
+    
+    // 处理保存记录
+    async handleSaveRecord(recordData) {
+      try {
+        const userId = localStorage.getItem('userId');
+        
+        if (this.isEditMode) {
+          // 更新记录
+          recordData.userId = userId;
+          const response = await generalTableApi.updateGeneralTable(recordData);
+          
+          if (response.data.code === 200) {
+            this.$message.success('更新成功');
+            this.closeRecordDrawer();
+            this.refreshData();
+          } else {
+            this.$message.error(response.data.msg || '更新失败');
+          }
+        } else {
+          // 添加记录
+          recordData.bid = this.bookId;
+          recordData.userId = userId;
+          
+          const response = await generalTableApi.addGeneralTable(recordData);
+          
+          if (response.data.code === 200) {
+            this.$message.success('添加成功');
+            this.closeRecordDrawer();
+            this.refreshData();
+          } else {
+            this.$message.error(response.data.msg || '添加失败');
+          }
+        }
+      } catch (error) {
+        console.error('保存记录失败:', error);
+        this.$message.error('保存失败，请稍后重试');
+      }
+    },
+
+
+
+
+    // 批量删除记录
+    async batchDeleteRecords() {
+      try {
+        const userId = localStorage.getItem('userId');
+        if (!userId || !this.bookId) {
+          return;
+        }
+
+        const ids = this.selectedRecords.map(item => item.id);
+
+        const response = await generalTableApi.batchDeleteGeneralTables(ids, userId);
+
+        if (response.data && response.data.code === 200) {
+          this.$message.success(`成功删除 ${ids.length} 条记录`);
+          this.refreshData();
+        } else {
+          this.$message.error(response.data.message || '批量删除失败');
+        }
+      } catch (error) {
+        console.error('批量删除记录失败:', error);
+        this.$message.error('批量删除记录失败，请稍后重试');
+      }
+    },
+    
+
+    
+
   }
-  
-  .summary-header {
-    margin-bottom: 20px;
-  }
-  
-  .balance-card {
-    background-color: #f0f9ff;
-  }
-  
-  .income-card {
-    background-color: #f0fff0;
-  }
-  
-  .expense-card {
-    background-color: #fff0f0;
-  }
-  
-  .card-title {
-    font-size: 16px;
-    color: #606266;
-    margin-bottom: 10px;
-  }
-  
-  .card-amount {
-    font-size: 24px;
-    font-weight: bold;
-  }
-  
-  .search-filter-area {
-    margin-bottom: 20px;
-  }
-  
-  .filter-buttons {
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  .filter-panel {
-    margin-top: 15px;
-    padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 4px;
-  }
-  
-  .main-content {
-    margin-top: 20px;
-  }
-  
-  .summary-section {
-    background-color: #fff;
-    border-radius: 4px;
-    padding: 15px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-    height: 100%;
-  }
-  
-  .summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  
-  .summary-content {
-    margin-top: 15px;
-  }
-  
-  .summary-chart {
-    margin-top: 15px;
-  }
-  
-  .transactions-section {
-    background-color: #fff;
-    border-radius: 4px;
-    padding: 15px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  }
-  
-  .pagination-container {
-    margin-top: 20px;
-    text-align: right;
-  }
-  
-  .income-text {
-    color: #67c23a;
-  }
-  
-  .expense-text {
-    color: #f56c6c;
-  }
-  </style>
+};
+</script>
+
+<style scoped>
+.transactions-page {
+  padding: 20px;
+}
+
+/* 顶部统计卡片 */
+.summary-cards {
+  display: flex;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.summary-card {
+  flex: 1;
+  text-align: center;
+  padding: 15px;
+}
+
+.summary-card.balance {
+  background-color: #f0f9ff;
+}
+
+.summary-card.income {
+  background-color: #f0f9eb;
+}
+
+.summary-card.expense {
+  background-color: #fef0f0;
+}
+
+.card-title {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 10px;
+}
+
+.card-amount {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 操作栏 */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.left-actions, .right-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.search-input {
+  width: 250px;
+}
+
+/* 筛选面板 */
+.filter-panel {
+  background-color: #f5f7fa;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.filter-form {
+  margin-bottom: 15px;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 主要内容区域 */
+.main-container {
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  height: calc(100vh - 300px);
+  min-height: 500px;
+}
+
+/* 左侧汇总面板 */
+.summary-panel {
+  border-right: 1px solid #e6e6e6;
+  background-color: #f5f7fa;
+}
+
+.summary-header {
+  padding: 15px;
+  border-bottom: 1px solid #e6e6e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.summary-scrollbar {
+  height: calc(100% - 60px);
+}
+
+.summary-content {
+  padding: 15px;
+}
+
+.summary-chart {
+  margin-bottom: 20px;
+}
+
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary-item {
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.summary-item:hover {
+  background-color: #ecf5ff;
+}
+
+.summary-item.active {
+  background-color: #ecf5ff;
+  border-left: 3px solid #409eff;
+}
+
+.summary-item-date {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 5px;
+}
+
+.summary-item-amounts {
+  display: flex;
+  justify-content: space-between;
+}
+
+.income-amount {
+  color: #67c23a;
+}
+
+.expense-amount {
+  color: #f56c6c;
+}
+
+/* 右侧流水列表 */
+.records-panel {
+  padding: 15px;
+  overflow: auto;
+}
+
+.income-text {
+  color: #67c23a;
+}
+
+.expense-text {
+  color: #f56c6c;
+}
+
+.delete-btn {
+  color: #f56c6c;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 记录详情 */
+.record-detail {
+  padding: 10px;
+}
+
+.detail-item {
+  margin-bottom: 15px;
+  display: flex;
+}
+
+.detail-item .label {
+  width: 100px;
+  color: #606266;
+}
+
+.detail-item .value {
+  flex: 1;
+  color: #303133;
+}
+</style>
