@@ -13,7 +13,10 @@
             <div v-for="parent in assetAccounts" :key="parent.id" class="account-group">
               <div class="parent-account">
                 <div class="account-info">
-                  <span class="account-icon">{{ parent.icon || '💰' }}</span>
+                  <span class="account-icon">
+                    <font-awesome-icon v-if="getFontAwesomeIcon(parent.icon)" :icon="getFontAwesomeIcon(parent.icon)" />
+                    <span v-else>💰</span>
+                  </span>
                   <span class="account-name">{{ parent.name }}</span>
                 </div>
                 <div class="account-actions">
@@ -25,7 +28,10 @@
               <div class="child-accounts">
                 <div v-for="child in getChildAccounts(parent.id)" :key="child.id" class="child-account">
                   <div class="account-info">
-                    <span class="account-icon">{{ child.icon || '💳' }}</span>
+                    <span class="account-icon">
+                      <font-awesome-icon v-if="getFontAwesomeIcon(child.icon)" :icon="getFontAwesomeIcon(child.icon)" />
+                      <span v-else>💳</span>
+                    </span>
                     <span class="account-name">{{ child.name }}</span>
                     <span class="account-amount">{{ formatAmount(child.assetAmount) }}</span>
                   </div>
@@ -51,7 +57,10 @@
             <div v-for="parent in liabilityAccounts" :key="parent.id" class="account-group">
               <div class="parent-account">
                 <div class="account-info">
-                  <span class="account-icon">{{ parent.icon || '💸' }}</span>
+                  <span class="account-icon">
+                    <font-awesome-icon v-if="getFontAwesomeIcon(parent.icon)" :icon="getFontAwesomeIcon(parent.icon)" />
+                    <span v-else>💸</span>
+                  </span>
                   <span class="account-name">{{ parent.name }}</span>
                 </div>
                 <div class="account-actions">
@@ -63,7 +72,10 @@
               <div class="child-accounts">
                 <div v-for="child in getChildAccounts(parent.id)" :key="child.id" class="child-account">
                   <div class="account-info">
-                    <span class="account-icon">{{ child.icon || '💳' }}</span>
+                    <span class="account-icon">
+                      <font-awesome-icon v-if="getFontAwesomeIcon(child.icon)" :icon="getFontAwesomeIcon(child.icon)" />
+                      <span v-else>💳</span>
+                    </span>
                     <span class="account-name">{{ child.name }}</span>
                     <span class="account-amount">{{ formatAmount(child.assetAmount) }}</span>
                   </div>
@@ -115,7 +127,29 @@
             <el-input v-model="accountForm.name" placeholder="请输入账户名称"></el-input>
           </el-form-item>
           <el-form-item label="账户图标" prop="icon">
-            <el-input v-model="accountForm.icon" placeholder="请输入账户图标"></el-input>
+            <div class="icon-selector">
+              <el-input v-model="accountForm.icon" placeholder="请输入账户图标"></el-input>
+              <div class="icon-preview" v-if="accountForm.icon">
+                <span>预览：</span>
+                <font-awesome-icon v-if="getFontAwesomeIcon(accountForm.icon)" :icon="getFontAwesomeIcon(accountForm.icon)" />
+                <span v-else>无效图标</span>
+              </div>
+              <div class="icon-list">
+                <div class="icon-list-title">选择图标：</div>
+                <div class="icon-grid">
+                  <div 
+                    v-for="(icon, name) in allIcons" 
+                    :key="name" 
+                    class="icon-item" 
+                    :class="{ 'icon-selected': accountForm.icon === name }"
+                    @click="selectIcon(name)"
+                  >
+                    <font-awesome-icon :icon="icon" />
+                    <div class="icon-name">{{ name.replace('_icon', '') }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </el-form-item>
           <el-form-item label="账户类型" prop="type" v-if="!isEditMode && !isAddChildMode">
             <el-select v-model="accountForm.type" placeholder="请选择账户类型">
@@ -169,6 +203,7 @@
   import { ref, reactive, onMounted, computed, watch } from 'vue';
   import { ElMessage } from 'element-plus';
   import accountApi from '@/api/account.js'; // 使用新创建的API接口
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'; // 导入FontAwesomeIcon组件
   
   const props = defineProps({
     bookId: {
@@ -193,6 +228,79 @@
     totalLiabilities: 0,
     netWorth: 0
   });
+  
+  // 图标映射函数
+  const getFontAwesomeIcon = (iconName) => {
+    if (!iconName) return null;
+    
+    // 图标名称到Font Awesome图标的映射
+    const iconMap = {
+      'cash_icon': ['fas', 'money-bill-wave'],
+      'savings_icon': ['fas', 'piggy-bank'],
+      'wallet_icon': ['fas', 'wallet'],
+      'icbc_icon': ['fas', 'university'],
+      'ccb_icon': ['fas', 'university'],
+      'abc_icon': ['fas', 'university'],
+      'stock_icon': ['fas', 'chart-line'],
+      'fund_icon': ['fas', 'chart-pie'],
+      'finance_icon': ['fas', 'money-bill-wave'],
+      'alipay_icon': ['fab', 'alipay'],
+      'wechat_icon': ['fab', 'weixin'],
+      'credit_icon': ['far', 'credit-card'],
+      'loan_icon': ['fas', 'hand-holding-usd'],
+      'other_liability_icon': ['fas', 'ellipsis-h'],
+      'boc_icon': ['fas', 'university'],
+      'icbc_credit_icon': ['far', 'credit-card'],
+      'cmb_icon': ['fas', 'university'],
+      'house_loan_icon': ['fas', 'home'],
+      'car_loan_icon': ['fas', 'car'],
+      'consumer_loan_icon': ['fas', 'tags'],
+      'shopping_icon': ['fas', 'shopping-bag'],
+      'food_icon': ['fas', 'utensils'],
+      'transport_icon': ['fas', 'car'],
+      'home_icon': ['fas', 'home'],
+      'daily_icon': ['fas', 'box'],
+      'supermarket_icon': ['fas', 'shopping-cart'],
+      'toiletry_icon': ['fas', 'toilet-paper'],
+      'digital_icon': ['fas', 'mobile-alt'],
+      'salary_icon': ['fas', 'money-bill-wave'],
+      'investment_icon': ['fas', 'chart-line'],
+      'other_income_icon': ['fas', 'ellipsis-h'],
+      'bonus_icon': ['fas', 'wallet'],
+      'performance_icon': ['fas', 'medal']
+    };
+    
+    return iconMap[iconName] || null;
+  };
+  
+  // 所有图标合并到一个对象中
+  const allIcons = {
+    'cash_icon': ['fas', 'money-bill-wave'],
+    'savings_icon': ['fas', 'piggy-bank'],
+    'wallet_icon': ['fas', 'wallet'],
+    'icbc_icon': ['fas', 'university'],
+    'ccb_icon': ['fas', 'university'],
+    'abc_icon': ['fas', 'university'],
+    'stock_icon': ['fas', 'chart-line'],
+    'fund_icon': ['fas', 'chart-pie'],
+    'finance_icon': ['fas', 'money-bill-wave'],
+    'alipay_icon': ['fab', 'alipay'],
+    'wechat_icon': ['fab', 'weixin'],
+    'credit_icon': ['far', 'credit-card'],
+    'loan_icon': ['fas', 'hand-holding-usd'],
+    'other_liability_icon': ['fas', 'ellipsis-h'],
+    'boc_icon': ['fas', 'university'],
+    'icbc_credit_icon': ['far', 'credit-card'],
+    'cmb_icon': ['fas', 'university'],
+    'house_loan_icon': ['fas', 'home'],
+    'car_loan_icon': ['fas', 'car'],
+    'consumer_loan_icon': ['fas', 'tags']
+  };
+  
+  // 选择图标
+  const selectIcon = (iconName) => {
+    accountForm.icon = iconName;
+  };
   
   // 表单数据
   const accountForm = reactive({
@@ -638,5 +746,76 @@
 
 .net-value {
   color: #409EFF;
+}
+
+/* 添加图标选择器样式 */
+.icon-selector {
+  margin-top: 10px;
+}
+
+.icon-preview {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-list {
+  margin-top: 15px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.icon-list-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.icon-item:hover {
+  background-color: #f5f7fa;
+}
+
+.icon-selected {
+  background-color: #ecf5ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.icon-name {
+  margin-top: 5px;
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.account-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
 }
 </style>

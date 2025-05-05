@@ -13,7 +13,10 @@
           <div v-for="parent in expenseCategories" :key="parent.id" class="category-group">
             <div class="parent-category">
               <div class="category-info">
-                <span class="category-icon">{{ parent.icon || '📋' }}</span>
+                <span class="category-icon">
+                  <font-awesome-icon v-if="getFontAwesomeIcon(parent.icon)" :icon="getFontAwesomeIcon(parent.icon)" />
+                  <span v-else>📋</span>
+                </span>
                 <span class="category-name">{{ parent.name }}</span>
               </div>
               <div class="category-actions">
@@ -25,7 +28,10 @@
             <div class="child-categories">
               <div v-for="child in getChildCategories(parent.id)" :key="child.id" class="child-category">
                 <div class="category-info">
-                  <span class="category-icon">{{ child.icon || '📝' }}</span>
+                  <span class="category-icon">
+                    <font-awesome-icon v-if="getFontAwesomeIcon(child.icon)" :icon="getFontAwesomeIcon(child.icon)" />
+                    <span v-else>📝</span>
+                  </span>
                   <span class="category-name">{{ child.name }}</span>
                 </div>
                 <div class="category-actions">
@@ -50,7 +56,10 @@
           <div v-for="parent in incomeCategories" :key="parent.id" class="category-group">
             <div class="parent-category">
               <div class="category-info">
-                <span class="category-icon">{{ parent.icon || '📋' }}</span>
+                <span class="category-icon">
+                  <font-awesome-icon v-if="getFontAwesomeIcon(parent.icon)" :icon="getFontAwesomeIcon(parent.icon)" />
+                  <span v-else>📋</span>
+                </span>
                 <span class="category-name">{{ parent.name }}</span>
               </div>
               <div class="category-actions">
@@ -62,7 +71,10 @@
             <div class="child-categories">
               <div v-for="child in getChildCategories(parent.id)" :key="child.id" class="child-category">
                 <div class="category-info">
-                  <span class="category-icon">{{ child.icon || '📝' }}</span>
+                  <span class="category-icon">
+                    <font-awesome-icon v-if="getFontAwesomeIcon(child.icon)" :icon="getFontAwesomeIcon(child.icon)" />
+                    <span v-else>📝</span>
+                  </span>
                   <span class="category-name">{{ child.name }}</span>
                 </div>
                 <div class="category-actions">
@@ -93,7 +105,29 @@
           <el-input v-model="categoryForm.name" placeholder="请输入分类名称"></el-input>
         </el-form-item>
         <el-form-item label="分类图标" prop="icon">
-          <el-input v-model="categoryForm.icon" placeholder="请输入分类图标"></el-input>
+          <div class="icon-selector">
+            <el-input v-model="categoryForm.icon" placeholder="请输入分类图标"></el-input>
+            <div class="icon-preview" v-if="categoryForm.icon">
+              <span>预览：</span>
+              <font-awesome-icon v-if="getFontAwesomeIcon(categoryForm.icon)" :icon="getFontAwesomeIcon(categoryForm.icon)" />
+              <span v-else>无效图标</span>
+            </div>
+            <div class="icon-list">
+              <div class="icon-list-title">选择图标：</div>
+              <div class="icon-grid">
+                <div 
+                  v-for="(icon, name) in allIcons" 
+                  :key="name" 
+                  class="icon-item" 
+                  :class="{ 'icon-selected': categoryForm.icon === name }"
+                  @click="selectIcon(name)"
+                >
+                  <font-awesome-icon :icon="icon" />
+                  <div class="icon-name">{{ name.replace('_icon', '') }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="分类类型" prop="type" v-if="!isEditMode && !isAddChildMode">
           <el-select v-model="categoryForm.type" placeholder="请选择分类类型">
@@ -136,9 +170,12 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import axios from 'axios';
 import config from '@/config/config.js'; // 导入配置文件
-
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'; // 导入FontAwesomeIcon组件
 export default {
   name: 'CategoryManagementPage',
+  components: {
+    FontAwesomeIcon
+  },
   props: {
     bookId: {
       type: [String, Number],
@@ -156,6 +193,93 @@ export default {
     const isAddChildMode = ref(false);
     const parentCategory = ref(null);
     const categoryToDelete = ref(null);
+    const activeIconCategories = ref(['common']); // 默认展开常用图标分类
+    
+    // 图标映射函数
+    const getFontAwesomeIcon = (iconName) => {
+      if (!iconName) return null;
+      
+      // 图标名称到Font Awesome图标的映射
+      const iconMap = {
+        'shopping_icon': ['fas', 'shopping-bag'],
+        'food_icon': ['fas', 'utensils'],
+        'transport_icon': ['fas', 'car'],
+        'home_icon': ['fas', 'home'],
+        'daily_icon': ['fas', 'box'],
+        'supermarket_icon': ['fas', 'shopping-cart'],
+        'toiletry_icon': ['fas', 'toilet-paper'],
+        'digital_icon': ['fas', 'mobile-alt'],
+        'salary_icon': ['fas', 'money-bill-wave'],
+        'investment_icon': ['fas', 'chart-line'],
+        'other_income_icon': ['fas', 'ellipsis-h'],
+        'bonus_icon': ['fas', 'wallet'],
+        'performance_icon': ['fas', 'medal'],
+        'cash_icon': ['fas', 'money-bill-wave'],
+        'savings_icon': ['fas', 'piggy-bank'],
+        'wallet_icon': ['fas', 'wallet'],
+        'icbc_icon': ['fas', 'university'],
+        'ccb_icon': ['fas', 'university'],
+        'abc_icon': ['fas', 'university'],
+        'stock_icon': ['fas', 'chart-line'],
+        'fund_icon': ['fas', 'chart-pie'],
+        'finance_icon': ['fas', 'money-bill-wave'],
+        'alipay_icon': ['fab', 'alipay'],
+        'wechat_icon': ['fab', 'weixin'],
+        'credit_icon': ['far', 'credit-card'],
+        'loan_icon': ['fas', 'hand-holding-usd'],
+        'other_liability_icon': ['fas', 'ellipsis-h'],
+        'boc_icon': ['fas', 'university'],
+        'icbc_credit_icon': ['far', 'credit-card'],
+        'cmb_icon': ['fas', 'university'],
+        'house_loan_icon': ['fas', 'home'],
+        'car_loan_icon': ['fas', 'car'],
+        'consumer_loan_icon': ['fas', 'tags']
+      };
+      
+      return iconMap[iconName] || null;
+    };
+    
+    // 所有图标合并到一个对象中
+    const allIcons = {
+      'shopping_icon': ['fas', 'shopping-bag'],
+      'food_icon': ['fas', 'utensils'],
+      'transport_icon': ['fas', 'car'],
+      'home_icon': ['fas', 'home'],
+      'daily_icon': ['fas', 'box'],
+      'supermarket_icon': ['fas', 'shopping-cart'],
+      'toiletry_icon': ['fas', 'toilet-paper'],
+      'digital_icon': ['fas', 'mobile-alt'],
+      'salary_icon': ['fas', 'money-bill-wave'],
+      'investment_icon': ['fas', 'chart-line'],
+      'other_income_icon': ['fas', 'ellipsis-h'],
+      'bonus_icon': ['fas', 'wallet'],
+      'performance_icon': ['fas', 'medal'],
+      'cash_icon': ['fas', 'money-bill-wave'],
+      'savings_icon': ['fas', 'piggy-bank'],
+      'wallet_icon': ['fas', 'wallet'],
+      'icbc_icon': ['fas', 'university'],
+      'ccb_icon': ['fas', 'university'],
+      'abc_icon': ['fas', 'university'],
+      'stock_icon': ['fas', 'chart-line'],
+      'fund_icon': ['fas', 'chart-pie'],
+      'finance_icon': ['fas', 'money-bill-wave'],
+      'alipay_icon': ['fab', 'alipay'],
+      'wechat_icon': ['fab', 'weixin'],
+      'credit_icon': ['far', 'credit-card'],
+      'loan_icon': ['fas', 'hand-holding-usd'],
+      'other_liability_icon': ['fas', 'ellipsis-h'],
+      'boc_icon': ['fas', 'university'],
+      'icbc_credit_icon': ['far', 'credit-card'],
+      'cmb_icon': ['fas', 'university'],
+      'house_loan_icon': ['fas', 'home'],
+      'car_loan_icon': ['fas', 'car'],
+      'consumer_loan_icon': ['fas', 'tags']
+    };
+    
+    // 选择图标
+    const selectIcon = (iconName) => {
+      categoryForm.icon = iconName;
+    };
     
     // 表单数据
     const categoryForm = reactive({
@@ -404,7 +528,11 @@ export default {
       editCategory,
       saveCategory,
       confirmDelete,
-      deleteCategory
+      deleteCategory,
+      getFontAwesomeIcon,
+      allIcons,
+      selectIcon,
+      activeIconCategories
     };
   }
 }
@@ -437,20 +565,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 10px 15px;
   background-color: #f5f7fa;
   border-bottom: 1px solid #ebeef5;
 }
 
 .child-categories {
-  padding: 10px 20px;
+  padding: 10px 15px;
 }
 
 .child-category {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 8px 0;
   border-bottom: 1px dashed #ebeef5;
 }
 
@@ -464,27 +592,32 @@ export default {
 }
 
 .category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   margin-right: 10px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .category-name {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .category-actions {
   display: flex;
-  gap: 8px;
+  gap: 5px;
 }
 
 .no-child {
-  padding: 20px;
+  padding: 20px 0;
   text-align: center;
   color: #909399;
 }
 
 .empty-category {
-  margin-top: 40px;
+  padding: 40px 0;
 }
 
 .warning-text {
@@ -492,8 +625,70 @@ export default {
   font-weight: bold;
 }
 
-.empty-text {
-  color: #909399;
-  font-size: 14px;
+/* 图标选择器样式 */
+.icon-selector {
+  width: 100%;
+}
+
+.icon-preview {
+  margin-top: 10px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-list {
+  margin-top: 15px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.icon-list-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #606266;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.icon-item:hover {
+  background-color: #f5f7fa;
+  border-color: #409eff;
+}
+
+.icon-selected {
+  background-color: #ecf5ff;
+  border-color: #409eff;
+  box-shadow: 0 0 5px rgba(64, 158, 255, 0.3);
+}
+
+.icon-name {
+  font-size: 10px;
+  margin-top: 5px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
 }
 </style>

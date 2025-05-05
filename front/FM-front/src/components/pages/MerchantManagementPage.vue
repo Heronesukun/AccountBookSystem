@@ -53,13 +53,10 @@
           <el-table-column prop="categoryName" label="分类" width="120" />
           <el-table-column label="Logo" width="100">
             <template #default="scope">
-              <el-image
-                v-if="scope.row.logo"
-                :src="scope.row.logo"
-                style="width: 40px; height: 40px"
-                fit="cover"
-              />
-              <span v-else>无</span>
+              <span class="merchant-icon">
+                <font-awesome-icon v-if="getFontAwesomeIcon(scope.row.logo)" :icon="getFontAwesomeIcon(scope.row.logo)" />
+                <span v-else>📋</span>
+              </span>
             </template>
           </el-table-column>
           <el-table-column prop="address" label="地址" />
@@ -133,7 +130,29 @@
           </el-form-item>
           
           <el-form-item label="Logo">
-            <el-input v-model="merchantForm.logo" placeholder="Logo URL" />
+            <div class="icon-selector">
+              <el-input v-model="merchantForm.logo" placeholder="请输入图标名称" />
+              <div class="icon-preview" v-if="merchantForm.logo">
+                <span>预览：</span>
+                <font-awesome-icon v-if="getFontAwesomeIcon(merchantForm.logo)" :icon="getFontAwesomeIcon(merchantForm.logo)" />
+                <span v-else>无效图标</span>
+              </div>
+              <div class="icon-list">
+                <div class="icon-list-title">选择图标：</div>
+                <div class="icon-grid">
+                  <div 
+                    v-for="(icon, name) in allIcons" 
+                    :key="name" 
+                    class="icon-item" 
+                    :class="{ 'icon-selected': merchantForm.logo === name }"
+                    @click="selectIcon(name)"
+                  >
+                    <font-awesome-icon :icon="icon" />
+                    <div class="icon-name">{{ name.replace('_icon', '') }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </el-form-item>
           
           <el-form-item label="地址">
@@ -178,6 +197,7 @@
   import { Search, Plus } from '@element-plus/icons-vue';
   import merchantApi from '@/api/merchant';
   import categoryApi from '@/api/category';
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
   
   // 状态定义
   const loading = ref(false);
@@ -196,6 +216,102 @@
   const route = useRoute();
   const currentBookId = ref(null);
   const userId = ref(localStorage.getItem('userId') || '');
+  
+  // 图标映射函数
+  const getFontAwesomeIcon = (iconName) => {
+    if (!iconName) return null;
+    
+    // 图标名称到Font Awesome图标的映射
+    const iconMap = {
+      'shopping_icon': ['fas', 'shopping-bag'],
+      'food_icon': ['fas', 'utensils'],
+      'transport_icon': ['fas', 'car'],
+      'home_icon': ['fas', 'home'],
+      'daily_icon': ['fas', 'box'],
+      'supermarket_icon': ['fas', 'shopping-cart'],
+      'toiletry_icon': ['fas', 'toilet-paper'],
+      'digital_icon': ['fas', 'mobile-alt'],
+      'salary_icon': ['fas', 'money-bill-wave'],
+      'investment_icon': ['fas', 'chart-line'],
+      'other_income_icon': ['fas', 'ellipsis-h'],
+      'bonus_icon': ['fas', 'wallet'],
+      'performance_icon': ['fas', 'medal'],
+      'cash_icon': ['fas', 'money-bill-wave'],
+      'savings_icon': ['fas', 'piggy-bank'],
+      'wallet_icon': ['fas', 'wallet'],
+      'icbc_icon': ['fas', 'university'],
+      'ccb_icon': ['fas', 'university'],
+      'abc_icon': ['fas', 'university'],
+      'stock_icon': ['fas', 'chart-line'],
+      'fund_icon': ['fas', 'chart-pie'],
+      'finance_icon': ['fas', 'money-bill-wave'],
+      'alipay_icon': ['fab', 'alipay'],
+      'wechat_icon': ['fab', 'weixin'],
+      'credit_icon': ['far', 'credit-card'],
+      'loan_icon': ['fas', 'hand-holding-usd'],
+      'other_liability_icon': ['fas', 'ellipsis-h'],
+      'boc_icon': ['fas', 'university'],
+      'icbc_credit_icon': ['far', 'credit-card'],
+      'cmb_icon': ['fas', 'university'],
+      'house_loan_icon': ['fas', 'home'],
+      'car_loan_icon': ['fas', 'car'],
+      'consumer_loan_icon': ['fas', 'tags'],
+      'walmart_logo': ['fas', 'shopping-cart'],
+      'kfc_logo': ['fas', 'utensils'],
+      'mcdonalds_logo': ['fas', 'hamburger'],
+      'starbucks_logo': ['fas', 'coffee'],
+      'didi_logo': ['fas', 'car']
+    };
+    
+    return iconMap[iconName] || null;
+  };
+  
+  // 所有图标合并到一个对象中
+  const allIcons = {
+    'shopping_icon': ['fas', 'shopping-bag'],
+    'food_icon': ['fas', 'utensils'],
+    'transport_icon': ['fas', 'car'],
+    'home_icon': ['fas', 'home'],
+    'daily_icon': ['fas', 'box'],
+    'supermarket_icon': ['fas', 'shopping-cart'],
+    'toiletry_icon': ['fas', 'toilet-paper'],
+    'digital_icon': ['fas', 'mobile-alt'],
+    'salary_icon': ['fas', 'money-bill-wave'],
+    'investment_icon': ['fas', 'chart-line'],
+    'other_income_icon': ['fas', 'ellipsis-h'],
+    'bonus_icon': ['fas', 'wallet'],
+    'performance_icon': ['fas', 'medal'],
+    'cash_icon': ['fas', 'money-bill-wave'],
+    'savings_icon': ['fas', 'piggy-bank'],
+    'wallet_icon': ['fas', 'wallet'],
+    'icbc_icon': ['fas', 'university'],
+    'ccb_icon': ['fas', 'university'],
+    'abc_icon': ['fas', 'university'],
+    'stock_icon': ['fas', 'chart-line'],
+    'fund_icon': ['fas', 'chart-pie'],
+    'finance_icon': ['fas', 'money-bill-wave'],
+    'alipay_icon': ['fab', 'alipay'],
+    'wechat_icon': ['fab', 'weixin'],
+    'credit_icon': ['far', 'credit-card'],
+    'loan_icon': ['fas', 'hand-holding-usd'],
+    'other_liability_icon': ['fas', 'ellipsis-h'],
+    'boc_icon': ['fas', 'university'],
+    'icbc_credit_icon': ['far', 'credit-card'],
+    'cmb_icon': ['fas', 'university'],
+    'house_loan_icon': ['fas', 'home'],
+    'car_loan_icon': ['fas', 'car'],
+    'consumer_loan_icon': ['fas', 'tags'],
+    'walmart_logo': ['fas', 'shopping-cart'],
+    'kfc_logo': ['fas', 'utensils'],
+    'mcdonalds_logo': ['fas', 'hamburger'],
+    'starbucks_logo': ['fas', 'coffee'],
+    'didi_logo': ['fas', 'car']
+  };
+  
+  // 选择图标
+  const selectIcon = (iconName) => {
+    merchantForm.logo = iconName;
+  };
   
   // 在onMounted之前添加一个函数来初始化bookId
   const initBookId = () => {

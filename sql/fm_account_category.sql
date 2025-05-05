@@ -11,7 +11,7 @@
  Target Server Version : 50744
  File Encoding         : 65001
 
- Date: 02/05/2025 15:26:40
+ Date: 05/05/2025 16:25:22
 */
 
 SET NAMES utf8mb4;
@@ -59,7 +59,7 @@ INSERT INTO `fm_account_category` VALUES (9, '农行储蓄卡', 'ASSET', 2, 2, '
 INSERT INTO `fm_account_category` VALUES (10, '股票账户', 'ASSET', 3, 2, 'stock_icon', 1, 1, '1', 20000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (11, '基金账户', 'ASSET', 3, 2, 'fund_icon', 2, 1, '1', 15000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (12, '理财产品', 'ASSET', 3, 2, 'finance_icon', 3, 1, '1', 30000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
-INSERT INTO `fm_account_category` VALUES (13, '支付宝', 'ASSET', 4, 2, 'alipay_icon', 1, 1, '1', 1365.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-05-01 19:04:36');
+INSERT INTO `fm_account_category` VALUES (13, '支付宝', 'ASSET', 4, 2, 'alipay_icon', 1, 1, '1', 1726.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-05-03 15:58:49');
 INSERT INTO `fm_account_category` VALUES (14, '微信钱包', 'ASSET', 4, 2, 'wechat_icon', 2, 1, '1', 2000.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (15, '信用账户', 'LIABILITY', NULL, 1, 'credit_icon', 1, 1, '1', 0.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
 INSERT INTO `fm_account_category` VALUES (16, '贷款账户', 'LIABILITY', NULL, 1, 'loan_icon', 2, 1, '1', 0.00, 1, 1, 1, 0, '2025-03-17 16:45:12', '2025-03-17 18:13:23');
