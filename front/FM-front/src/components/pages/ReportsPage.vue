@@ -125,9 +125,9 @@
                     <div class="account-title">资产账户</div>
                     <el-table :data="assetAccounts" style="width: 100%">
                       <el-table-column prop="name" label="账户名称" />
-                      <el-table-column prop="balance" label="余额">
+                      <el-table-column prop="assetAmount" label="余额">
                         <template #default="scope">
-                          <span class="income">¥{{ scope.row.balance.toFixed(2) }}</span>
+                          <span class="income">¥{{ (scope.row.assetAmount !== undefined && scope.row.assetAmount !== null) ? scope.row.assetAmount.toFixed(2) : '0.00' }}</span>
                         </template>
                       </el-table-column>
                     </el-table>
@@ -138,9 +138,9 @@
                     <div class="account-title">负债账户</div>
                     <el-table :data="liabilityAccounts" style="width: 100%">
                       <el-table-column prop="name" label="账户名称" />
-                      <el-table-column prop="balance" label="余额">
+                      <el-table-column prop="assetAmount" label="余额">
                         <template #default="scope">
-                          <span class="expense">¥{{ scope.row.balance.toFixed(2) }}</span>
+                          <span class="expense">¥{{ (scope.row.assetAmount !== undefined && scope.row.assetAmount !== null) ? scope.row.assetAmount.toFixed(2) : '0.00' }}</span>
                         </template>
                       </el-table-column>
                     </el-table>
@@ -304,14 +304,14 @@
           const date = new Date(transaction.transactionDate);
           const month = date.getMonth(); // 0-11
           
-          if (transaction.type === 'INCOME') {
+          if (transaction.type === '收入') {
             income += amount;
             monthlyIncome[month] += amount;
             
             // 按分类统计收入
             const category = transaction.categoryName || '未分类';
             incomeByCategory[category] = (incomeByCategory[category] || 0) + amount;
-          } else if (transaction.type === 'EXPENSE') {
+          } else if (transaction.type === '支出') {
             expense += amount;
             monthlyExpense[month] += amount;
             
@@ -326,16 +326,21 @@
         monthlyIncomeData.value = monthlyIncome;
         monthlyExpenseData.value = monthlyExpense;
         
-        // 转换为图表数据格式
-        incomeData.value = Object.entries(incomeByCategory).map(([name, value]) => ({
-          name,
-          value
-        }));
+// 转换为图表数据格式
+incomeData.value = Object.entries(incomeByCategory)
+  .filter(([_, value]) => value > 0)  // 过滤掉数值为0的数据
+  .map(([name, value]) => ({
+    name,
+    value
+  }));
         
-        expenseData.value = Object.entries(expenseByCategory).map(([name, value]) => ({
-          name,
-          value
-        }));
+// 转换为图表数据格式
+expenseData.value = Object.entries(expenseByCategory)
+  .filter(([_, value]) => value !== 0)  // 过滤掉数值为0的数据
+  .map(([name, value]) => ({
+    name,
+    value: Math.abs(value)  // 确保支出值为正数
+  }));
         
         // 初始化图表
         initIncomeChart();
@@ -356,16 +361,21 @@
         assetAccounts.value = assets;
         liabilityAccounts.value = liabilities;
         
-        // 转换为图表数据格式
-        const assetData = assets.map(account => ({
-          name: account.name,
-          value: parseFloat(account.balance || 0)
-        }));
+// 转换为图表数据格式
+const assetData = assets
+  .filter(account => parseFloat(account.assetAmount || 0) !== 0)  // 过滤掉余额为0的账户
+  .map(account => ({
+    name: account.name,
+    value: parseFloat(account.assetAmount || 0)
+  }));
         
-        const liabilityData = liabilities.map(account => ({
-          name: account.name,
-          value: parseFloat(account.balance || 0)
-        }));
+// 转换为图表数据格式
+const liabilityData = liabilities
+  .filter(account => parseFloat(account.assetAmount || 0) !== 0)  // 过滤掉余额为0的账户
+  .map(account => ({
+    name: account.name,
+    value: Math.abs(parseFloat(account.assetAmount || 0))  // 确保负债值为正数
+  }));
         
         // 初始化图表
         initAssetChart(assetData);
@@ -414,27 +424,31 @@
         transactions.forEach(transaction => {
           const amount = parseFloat(transaction.amount);
           
-          if (transaction.type === 'INCOME') {
+          if (transaction.type === '收入') {
             // 按分类统计收入
             const category = transaction.categoryName || '未分类';
             incomeByCategory[category] = (incomeByCategory[category] || 0) + amount;
-          } else if (transaction.type === 'EXPENSE') {
+          } else if (transaction.type === '支出') {
             // 按分类统计支出
             const category = transaction.categoryName || '未分类';
             expenseByCategory[category] = (expenseByCategory[category] || 0) + amount;
           }
         });
         
-        // 转换为图表数据格式
-        incomeCategoryData.value = Object.entries(incomeByCategory).map(([name, value]) => ({
-          name,
-          value
-        }));
-        
-        expenseCategoryData.value = Object.entries(expenseByCategory).map(([name, value]) => ({
-          name,
-          value
-        }));
+// 转换为图表数据格式
+incomeCategoryData.value = Object.entries(incomeByCategory)
+  .filter(([_, value]) => value > 0)  // 过滤掉数值为0的数据
+  .map(([name, value]) => ({
+    name,
+    value
+  }));
+
+expenseCategoryData.value = Object.entries(expenseByCategory)
+  .filter(([_, value]) => value !== 0)  // 过滤掉数值为0的数据
+  .map(([name, value]) => ({
+    name,
+    value: Math.abs(value)  // 确保支出值为正数
+  }));
         
         // 初始化图表
         initIncomeCategoryChart();
@@ -455,9 +469,13 @@
       if (netWorthResponse.data.code === 200) {
         const netWorthHistory = netWorthResponse.data.data || [];
         
-        // 转换为图表数据格式
-        netWorthDates.value = netWorthHistory.map(item => item.date);
-        netWorthData.value = netWorthHistory.map(item => item.netWorth);
+        // 转换为图表数据格式 - 添加类型检查
+        netWorthDates.value = Array.isArray(netWorthHistory) 
+          ? netWorthHistory.map(item => item.date)
+          : [];
+        netWorthData.value = Array.isArray(netWorthHistory)
+          ? netWorthHistory.map(item => item.netWorth)
+          : [];
         
         // 初始化图表
         initNetWorthChart();
@@ -472,12 +490,12 @@
         // 分离资产和负债账户
         assetAccounts.value = accounts.filter(account => account.type === 'ASSET').map(account => ({
           ...account,
-          balance: parseFloat(account.balance || 0)
+          assetAmount: parseFloat(account.assetAmount || 0)
         }));
         
         liabilityAccounts.value = accounts.filter(account => account.type === 'LIABILITY').map(account => ({
           ...account,
-          balance: parseFloat(account.balance || 0)
+          assetAmount: parseFloat(account.assetAmount || 0)
         }));
       }
     } catch (error) {
@@ -824,58 +842,70 @@
     expenseCategoryChartInstance.setOption(option);
   };
   
- // 初始化净资产趋势图表
- const initNetWorthChart = () => {
-    if (!netWorthChart.value) return;
-    
-    if (!netWorthChartInstance) {
-      netWorthChartInstance = echarts.init(netWorthChart.value);
-    }
-    
-    const option = {
-      tooltip: {
-        trigger: 'axis',
-        formatter: '{b}: {c}'
+// 初始化净资产趋势图表
+const initNetWorthChart = () => {
+  if (!netWorthChart.value) return;
+  
+  if (!netWorthChartInstance) {
+    netWorthChartInstance = echarts.init(netWorthChart.value);
+  }
+  
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      formatter: '{b}<br />{a}: {c}'
+    },
+    xAxis: {
+      type: 'category',
+      data: netWorthDates.value,
+      axisLabel: {
+        rotate: 45
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '¥{value}'
+      }
+    },
+    series: [{
+      name: '净资产',
+      type: 'line',
+      data: netWorthData.value,
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 8,
+      itemStyle: {
+        color: '#5470c6'
       },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      },
-      xAxis: {
-        type: 'category',
-        data: netWorthDates.value
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [
-        {
-          name: '净资产',
-          type: 'line',
-          data: netWorthData.value,
-          itemStyle: {
-            color: '#5470c6'
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          {
+            offset: 0,
+            color: 'rgba(84, 112, 198, 0.5)'
           },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              {
-                offset: 0,
-                color: 'rgba(84, 112, 198, 0.5)'
-              },
-              {
-                offset: 1,
-                color: 'rgba(84, 112, 198, 0.1)'
-              }
-            ])
+          {
+            offset: 1,
+            color: 'rgba(84, 112, 198, 0.1)'
           }
-        }
-      ]
-    };
-    
-    netWorthChartInstance.setOption(option);
+        ])
+      }
+    }],
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '15%',
+      containLabel: true
+    }
   };
+  
+  netWorthChartInstance.setOption(option);
+  
+  // 添加窗口大小变化时的自适应
+  window.addEventListener('resize', () => {
+    netWorthChartInstance.resize();
+  });
+};
   
   // 窗口大小变化时重新调整图表大小
   window.addEventListener('resize', () => {
