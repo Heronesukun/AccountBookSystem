@@ -48,7 +48,7 @@
           border
           style="width: 100%"
         >
-          <el-table-column prop="id" label="ID" width="80" />
+          <!-- 移除ID列 -->
           <el-table-column prop="name" label="商家名称" width="150" />
           <el-table-column prop="categoryName" label="分类" width="120" />
           <el-table-column label="Logo" width="100">
@@ -137,7 +137,7 @@
                 <font-awesome-icon v-if="getFontAwesomeIcon(merchantForm.logo)" :icon="getFontAwesomeIcon(merchantForm.logo)" />
                 <span v-else>无效图标</span>
               </div>
-              <div class="icon-list">
+              <div class="icon-container">
                 <div class="icon-list-title">选择图标：</div>
                 <div class="icon-grid">
                   <div 
@@ -359,11 +359,11 @@
   // 加载分类数据
   const loadCategories = async () => {
     try {
-      const response = await categoryApi.getCategoryList(currentBookId.value, userId.value, 'expense');
+      const response = await categoryApi.getParentCategories(currentBookId.value, userId.value, 'EXPENSE');
       
       if (response.data.code === 200) {
         // 只获取一级分类
-        categories.value = response.data.data.filter(item => item.level === 1) || [];
+        categories.value = response.data.data || [];
       } else {
         ElMessage.error('加载分类失败: ' + response.data.msg);
       }
@@ -492,6 +492,17 @@
     isSystem: 0
   });
   
+  // 表单验证规则
+  const rules = {
+    name: [
+      { required: true, message: '请输入商家名称', trigger: 'blur' },
+      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+    ],
+    categoryId: [
+      { required: true, message: '请选择分类', trigger: 'change' }
+    ]
+  };
+  
   // 在showAddDialog和showEditDialog中正确设置这些值
   const showAddDialog = () => {
     isEdit.value = false;
@@ -505,118 +516,102 @@
   // 显示编辑对话框
   const showEditDialog = (row) => {
     isEdit.value = true;
-    resetForm();
-    
-    // 复制数据到表单
-    Object.keys(merchantForm).forEach(key => {
-      if (key in row) {
-        merchantForm[key] = row[key];
-      }
-    });
-    
-    // 转换布尔值
-    merchantForm.isDefault = row.isDefault === 1;
-    
     dialogVisible.value = true;
-  };
-  
-  // 重置表单
-  const resetForm = () => {
+    
+    // 重置表单
     if (merchantFormRef.value) {
       merchantFormRef.value.resetFields();
     }
     
-    Object.assign(merchantForm, {
-      id: null,
-      name: '',
-      categoryId: null,
-      logo: '',
-      address: '',
-      contact: '',
-      description: '',
-      sortOrder: 0,
-      bookId: currentBookId.value,
-      userId: userId.value,
-      isDefault: false,
-      isSystem: 0
-    });
+    // 深拷贝数据，避免直接修改原始数据
+    merchantForm.id = row.id;
+    merchantForm.name = row.name;
+    merchantForm.categoryId = row.categoryId;
+    merchantForm.logo = row.logo;
+    merchantForm.address = row.address;
+    merchantForm.contact = row.contact;
+    merchantForm.description = row.description;
+    merchantForm.sortOrder = row.sortOrder;
+    merchantForm.bookId = currentBookId.value;
+    merchantForm.userId = userId.value;
+    merchantForm.isDefault = row.isDefault === 1;
+    merchantForm.isSystem = row.isSystem;
   };
   
-// ... 前面的代码保持不变 ...
-
-// 提交表单
-const submitForm = async () => {
-  if (!merchantFormRef.value) return;
-  
-  await merchantFormRef.value.validate(async (valid) => {
-    if (valid) {
-      // 转换布尔值为数字
-      const formData = { ...merchantForm };
-      formData.isDefault = formData.isDefault ? 1 : 0;
-      
-      try {
-        let response;
-        
-        if (isEdit.value) {
-          // 更新商家
-          response = await merchantApi.updateMerchant(formData);
-        } else {
-          // 添加商家
-          response = await merchantApi.addMerchant(formData);
+  // 提交表单
+  const submitForm = async () => {
+    if (!merchantFormRef.value) return;
+    
+    await merchantFormRef.value.validate(async (valid) => {
+      if (valid) {
+        try {
+          // 转换布尔值为数字
+          const formData = { ...merchantForm };
+          formData.isDefault = formData.isDefault ? 1 : 0;
+          
+          let response;
+          if (isEdit.value) {
+            // 确保编辑时包含ID
+            console.log('更新商家数据:', formData);
+            response = await merchantApi.updateMerchant(formData);
+          } else {
+            console.log('添加商家数据:', formData);
+            response = await merchantApi.addMerchant(formData);
+          }
+          
+          if (response.data.code === 200) {
+            ElMessage.success(isEdit.value ? '商家更新成功' : '商家添加成功');
+            dialogVisible.value = false;
+            loadMerchants();
+          } else {
+            ElMessage.error((isEdit.value ? '更新' : '添加') + '商家失败: ' + (response.data.message || response.data.msg));
+          }
+        } catch (error) {
+          console.error((isEdit.value ? '更新' : '添加') + '商家异常:', error);
+          ElMessage.error((isEdit.value ? '更新' : '添加') + '商家异常: ' + error.message);
         }
-        
-        // 修改这里的响应处理方式
-        if (response.data.code === 200) {
-          ElMessage.success(isEdit.value ? '商家更新成功' : '商家添加成功');
-          dialogVisible.value = false;
-          loadMerchants();
-        } else {
-          ElMessage.error((isEdit.value ? '更新' : '添加') + '商家失败: ' + response.data.message || response.data.msg);
-        }
-      } catch (error) {
-        console.error((isEdit.value ? '更新' : '添加') + '商家异常:', error);
-        ElMessage.error((isEdit.value ? '更新' : '添加') + '商家异常: ' + error.message);
+      } else {
+        return false;
       }
-    }
-  });
-};
-
-// 确认删除
-const confirmDelete = (row) => {
-  if (row.isSystem === 1) {
-    ElMessage.warning('系统预设商家不可删除');
-    return;
-  }
-  
-  ElMessageBox.confirm(
-    `确定要删除商家 "${row.name}" 吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-    .then(async () => {
-      try {
-        const response = await merchantApi.deleteMerchant(row.id, userId.value);
-        
-        // 修改这里的响应处理方式
-        if (response.data.code === 200) {
-          ElMessage.success('商家删除成功');
-          loadMerchants();
-        } else {
-          ElMessage.error('删除商家失败: ' + response.data.message || response.data.msg);
-        }
-      } catch (error) {
-        console.error('删除商家异常:', error);
-        ElMessage.error('删除商家异常: ' + error.message);
-      }
-    })
-    .catch(() => {
-      // 取消删除，不做任何操作
     });
-};
+  };
+
+  // 确认删除
+  const confirmDelete = (row) => {
+    if (row.isSystem === 1) {
+      ElMessage.warning('系统预设商家不可删除');
+      return;
+    }
+    
+    ElMessageBox.confirm(
+      `确定要删除商家 "${row.name}" 吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+      .then(async () => {
+        try {
+          const response = await merchantApi.deleteMerchant(row.id, userId.value);
+          
+          // 修改这里的响应处理方式
+          if (response.data.code === 200) {
+            ElMessage.success('商家删除成功');
+            loadMerchants();
+          } else {
+            ElMessage.error('删除商家失败: ' + response.data.message || response.data.msg);
+          }
+        } catch (error) {
+          console.error('删除商家异常:', error);
+          ElMessage.error('删除商家异常: ' + error.message);
+        }
+      })
+      .catch(() => {
+        // 取消删除，不做任何操作
+      });
+  };
 </script>
 
 <style scoped>
@@ -663,5 +658,74 @@ const confirmDelete = (row) => {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+}
+
+/* 图标选择器样式 */
+.icon-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.icon-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.icon-container {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.icon-list-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.icon-item:hover {
+  background-color: #f5f7fa;
+}
+
+.icon-selected {
+  background-color: #ecf5ff;
+  border-color: #409eff;
+}
+
+.icon-name {
+  font-size: 12px;
+  margin-top: 5px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.merchant-icon {
+  font-size: 18px;
 }
 </style>

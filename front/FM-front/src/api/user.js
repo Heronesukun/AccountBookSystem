@@ -2,9 +2,12 @@ import axios from 'axios';
 import config from '@/config/config.js';
 
 // 用户注册
-export function register(data) {
-  return axios.post(`${config.mdBaseUrl}/auth/register`, data);
-}
+return request({
+  url: '/auth/register',
+  method: 'post',
+  data,
+  noToken: true // 标记此请求不需要添加 token
+})
 
 // 用户登录
 export function login(data) {

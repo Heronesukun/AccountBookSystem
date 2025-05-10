@@ -36,6 +36,15 @@ public class LoginInterceptor implements HandlerInterceptor {
         response.setHeader("Access-Control-Allow-Methods", "*");
         //允许所有的域
         response.setHeader("Access-Control-Allow-Origin","*");
+        
+        // 获取请求路径
+        String requestURI = request.getRequestURI();
+        
+        // 检查是否是注册相关的路径，如果是则直接放行
+        if (requestURI.contains("/register") || requestURI.contains("/auth/register") || 
+            requestURI.contains("/api/auth/register")) {
+            return true; // 注册相关路径直接放行，不进行token验证
+        }
 
         FMResult result = null;
         // 从请求头中获取token，给sso系统发送请求验证token是否有效

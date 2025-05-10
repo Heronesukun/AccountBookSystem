@@ -120,7 +120,7 @@
       <el-dialog
         :title="dialogTitle"
         v-model="dialogVisible"
-        width="500px"
+        width="800px"
       >
         <el-form :model="accountForm" :rules="rules" ref="accountFormRef" label-width="100px">
           <el-form-item label="账户名称" prop="name">

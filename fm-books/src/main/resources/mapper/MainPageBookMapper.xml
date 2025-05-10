@@ -41,7 +41,9 @@
         insert into book_total (book_master, bname, b_status, create_time)
         values (#{bookMaster}, #{bookName}, 1, NOW())
     </insert>
-
+<select id="getBookWithMembers" resultType="com.fm.pojo.AccountBook" parameterType="java.lang.Integer">
+    SELECT * FROM book_total WHERE bid = #{bookId}
+</select>
     <select id="getMainPageBooks" resultMap="FMMainPageResultMap">
         <include refid="accountBookVO"/>
         where book_master = #{bookMaster}

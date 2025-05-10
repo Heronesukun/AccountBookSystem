@@ -7,7 +7,7 @@
             <h3>本年收支统计</h3>
             <div class="expense-amount">
               <span>总支出</span>
-              <div class="amount-value negative">-{{ formatAmount(yearlyExpense) }}</div>
+              <div class="amount-value negative">{{ formatAmount(yearlyExpense) }}</div>
             </div>
             <div class="stats-summary">
               <div>总收入 {{ formatAmount(yearlyIncome) }}</div>
@@ -55,7 +55,7 @@
       <el-card class="category-ranking-card">
         <div class="card-header">
           <h3>本月各分类支出排行</h3>
-          <div class="ranking-count">记账笔数 {{ totalRecords }} 总支出 -{{ formatAmount(monthlyExpense) }}</div>
+          <div class="ranking-count">记账笔数 {{ totalRecords }} 总支出 {{ formatAmount(monthlyExpense) }}</div>
         </div>
         <div class="ranking-list">
           <div class="ranking-item" v-for="(category, index) in categoryRanking" :key="index">
@@ -64,29 +64,45 @@
               <el-icon><component :is="getCategoryIcon(category.categoryName)"></component></el-icon>
             </div>
             <div class="category-name">{{ category.categoryName }}</div>
-            <div class="category-amount">-{{ formatAmount(category.amount) }}</div>
+            <div class="category-amount">{{ formatAmount(category.amount) }}</div>
           </div>
         </div>
       </el-card>
-  
-      <!-- 本月各成员收支 -->
-      <el-card class="member-stats-card">
-        <h3>本月各成员收支</h3>
-        <div class="member-list">
-          <div class="member-item" v-for="(member, index) in memberStats" :key="index">
-            <div class="member-avatar">
-              <el-avatar :size="40">{{ member.userName.substring(0, 1) }}</el-avatar>
-            </div>
-            <div class="member-info">
-              <div class="member-name">{{ member.userName }}</div>
-              <div class="member-amount">
-                <span>总收入 {{ formatAmount(member.income) }}</span>
-                <span>总支出 -{{ formatAmount(member.expense) }}</span>
-              </div>
-            </div>
-          </div>
+
+      <!-- AI理财建议卡片 -->
+      <el-card class="ai-advice-card">
+        <div class="card-header">
+          <h3>AI理财建议</h3>
+          <el-button type="primary" size="small" @click="getAIAdvice" :loading="aiLoading">
+            获取理财建议
+          </el-button>
+        </div>
+        <div class="ai-advice-preview" v-if="aiAdvice">
+          <p>{{ aiAdvice.substring(0, 100) }}...</p>
+          <el-button type="text" @click="showFullAdvice">查看完整建议</el-button>
+        </div>
+        <div class="ai-advice-empty" v-else>
+          <el-empty description="暂无理财建议，点击按钮获取AI分析"></el-empty>
         </div>
       </el-card>
+
+      <!-- AI理财建议对话框 -->
+      <el-dialog
+        title="AI理财建议(为了您的信息安全,本站将不会保存此内容,若需要请自行保存)"
+        v-model="aiDialogVisible"
+        width="60%"
+      >
+        <div class="ai-advice-content" v-loading="aiLoading">
+          <div v-if="aiAdvice" v-html="formatAdviceContent(aiAdvice)"></div>
+          <el-empty v-else description="正在生成理财建议，请稍候..."></el-empty>
+        </div>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="aiDialogVisible = false">关闭</el-button>
+            <el-button type="primary" @click="getAIAdvice(true)">重新生成</el-button>
+          </div>
+        </template>
+      </el-dialog>
     </div>
   </template>
   
@@ -94,8 +110,8 @@
   import * as echarts from 'echarts';
   import generalTableApi from '@/api/generalTable.js';
   import bookMemberRequest from '@/api/bookMember.js';
+  import aiAdviceRequest from '@/api/aiAdvice.js'; // 导入AI理财建议API
   import { Calendar, Money, Food, Goods, Histogram } from '@element-plus/icons-vue';
-  
   export default {
     name: 'HomePage',
     components: {
@@ -156,7 +172,11 @@
         memberStats: [],
         
         // 图表实例
-        expenseChart: null
+        expenseChart: null,
+        aiAdvice: '',
+    aiLoading: false,
+    aiDialogVisible: false,
+    customPrompt: ''
       };
     },
     mounted() {
@@ -265,7 +285,7 @@
         });
         
         // 计算结余
-        this.yearlyBalance = this.yearlyIncome - this.yearlyExpense;
+        this.yearlyBalance = this.yearlyIncome + this.yearlyExpense;
         
         // 转换分类数据为数组并排序
         this.categoryRanking = Array.from(categoryMap.values())
@@ -544,6 +564,53 @@
         };
         
         return iconMap[categoryName] || 'Money';
+      },
+      
+      // 获取AI理财建议
+      async getAIAdvice(refresh = false) {
+        if (this.aiLoading) return;
+        
+        // 如果已有建议且不是刷新，则直接显示
+        if (this.aiAdvice && !refresh) {
+          this.aiDialogVisible = true;
+          return;
+        }
+        
+        try {
+          this.aiLoading = true;
+          const userId = localStorage.getItem('userId');
+          
+          if (!this.bookId || !userId) {
+            this.$message.error('缺少必要参数：bookId 或 userId');
+            return;
+          }
+          
+          // 使用API模块调用后端
+          const response = await aiAdviceRequest.getFinancialAdvice(this.bookId, userId);
+          
+          if (response.data.code === 200) {
+            this.aiAdvice = response.data.data;
+            this.aiDialogVisible = true;
+          } else {
+            this.$message.error(`获取理财建议失败: ${response.data.msg}`);
+          }
+        } catch (error) {
+          console.error('获取AI理财建议出错:', error);
+          this.$message.error(`获取理财建议出错: ${error.message}`);
+        } finally {
+          this.aiLoading = false;
+        }
+      },
+      
+      // 显示完整建议
+      showFullAdvice() {
+        this.aiDialogVisible = true;
+      },
+      
+      // 格式化建议内容（将换行符转换为HTML）
+      formatAdviceContent(content) {
+        if (!content) return '';
+        return content.replace(/\n/g, '<br>');
       }
     },
     beforeDestroy() {
@@ -819,5 +886,38 @@
       flex-direction: column;
       gap: 4px;
     }
+  }
+  .ai-advice-card {
+    margin-bottom: 16px;
+  }
+  
+  .ai-advice-preview {
+    background-color: #f9f9f9;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 12px;
+  }
+  
+  .ai-advice-preview p {
+    margin: 0 0 12px 0;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .ai-advice-empty {
+    padding: 20px 0;
+  }
+  
+  .ai-advice-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+  
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
   }
   </style>

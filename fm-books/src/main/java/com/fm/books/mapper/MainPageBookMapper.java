@@ -11,4 +11,5 @@ public interface MainPageBookMapper {
     public int createNewBook(AccountBook accountBook);
     public int updateBookName(@Param("bookId") Integer bookId, @Param("bookName") String bookName);
     public int deleteBook(Integer bookId);
+    public AccountBook getBookWithMembers(Integer bookId);
 }

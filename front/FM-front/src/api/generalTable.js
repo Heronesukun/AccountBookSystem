@@ -68,10 +68,21 @@ export default {
 
   // 按日期汇总流水记录
   getSummaryByDate(bid, userId, summaryType, startDate, endDate) {
+    // 确保日期格式为 yyyy-MM-dd
+    const formatDate = (date) => {
+      if (!date) return '';
+      if (typeof date === 'string') return date;
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     return axios.get(`${config.mdBaseUrl}/general-table/summary/${bid}/${userId}/${summaryType}`, {
       params: {
-        startDate,
-        endDate
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate)
       },
       headers: {
         token: localStorage.getItem('token')

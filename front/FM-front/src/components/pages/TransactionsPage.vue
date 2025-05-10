@@ -54,18 +54,23 @@
     <!-- 筛选面板 -->
     <el-collapse-transition>
       <div v-show="showFilters" class="filter-panel">
-        <el-form :inline="true" class="filter-form">
-          <el-form-item label="日期范围">
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              format="yyyy-MM-dd"
-              value-format="yyyy-MM-dd"
-            ></el-date-picker>
-          </el-form-item>
+    <el-form :inline="true" class="filter-form">
+      <el-form-item label="日期范围">
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          format="yyyy-MM-dd"
+          value-format="yyyy-MM-dd"
+          :picker-options="{
+            disabledDate(time) {
+              return time.getTime() > Date.now();
+            }
+          }"
+        ></el-date-picker>
+      </el-form-item>
           
           <el-form-item label="类型">
             <el-select v-model="filterType" placeholder="选择类型" clearable>
@@ -156,18 +161,18 @@
       
       <!-- 右侧流水列表 -->
       <el-main class="records-panel">
-        <el-table
-          v-loading="loading"
-          :data="recordsList"
-          style="width: 100%"
-          @selection-change="handleSelectionChange"
-        >
-          <el-table-column type="selection" width="55"></el-table-column>
-          <el-table-column prop="date" label="日期" width="100" sortable>
-            <template #default="{row}">
-              {{ row && row.date ? formatDate(row.date) : '-' }}
-            </template>
-          </el-table-column>
+  <el-table
+    v-loading="loading"
+    :data="recordsList"
+    style="width: 100%"
+    @selection-change="handleSelectionChange"
+  >
+    <el-table-column type="selection" width="55"></el-table-column>
+    <el-table-column prop="date" label="日期" width="100" sortable>
+      <template #default="{row}">
+        {{ row && row.date ? formatDate(row.date) : '-' }}
+      </template>
+    </el-table-column>
           <el-table-column prop="type" label="类型" width="80">
             <template #default="{row}">
               <el-tag v-if="row" :type="row.type == '收入' ? 'success' : 'danger'">
@@ -205,8 +210,7 @@
           </el-table-column>
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="scope">
-              <el-button type="text" size="small" @click="editRecord(scope.row)">编辑</el-button>
-              <el-button type="text" size="small" @click="viewRecordDetail(scope.row)">查看</el-button>
+
               <el-button type="text" size="small" class="delete-btn" @click="confirmDeleteRecord(scope.row)">删除</el-button>
             </template>
           </el-table-column>
@@ -557,6 +561,7 @@ export default {
     
     // 获取汇总数据
     async fetchSummaryData() {
+      
       try {
         const userId = localStorage.getItem('userId');
         if (!userId || !this.bookId) {
@@ -691,8 +696,16 @@ export default {
     
     // 应用筛选
     applyFilters() {
-      this.currentPage = 1; // 重置到第一页
-      this.fetchRecordsData();
+      const params = {
+        bid: this.currentBookId,
+        userId: this.userId
+      };
+      
+      if (this.dateRange && this.dateRange.length === 2) {
+        params.startDate = this.formatDate(this.dateRange[0]);
+        params.endDate = this.formatDate(this.dateRange[1]);
+      }
+      
     },
     
     // 重置筛选
@@ -809,15 +822,14 @@ export default {
     
     // 格式化日期为API所需格式 (YYYY-MM-DD)
     formatDateForApi(date) {
-      if (!date) return '';
-      
-      const d = new Date(date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
-    },
+  if (!date) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+},
     
     // 格式化日期显示 (YYYY-MM-DD)
     formatDate(dateStr) {
@@ -849,26 +861,99 @@ export default {
     formatSummaryDate(dateStr, type) {
       if (!dateStr) return '-';
       
-      const date = new Date(dateStr);
+      // 确保日期字符串格式正确
+      let date;
+      if (typeof dateStr === 'string') {
+        // 处理可能的格式问题
+        if (dateStr.includes('T')) {
+          // ISO格式日期
+          date = new Date(dateStr);
+        } else if (dateStr.includes('-')) {
+          // YYYY-MM-DD 格式
+          const parts = dateStr.split('-');
+          if (parts.length >= 3) {
+            date = new Date(parts[0], parts[1] - 1, parts[2]);
+          } else if (parts.length === 2) {
+            date = new Date(parts[0], parts[1] - 1, 1);
+          } else {
+            date = new Date(parts[0], 0, 1);
+          }
+        } else {
+          // 尝试直接解析
+          date = new Date(dateStr);
+        }
+      } else {
+        // 如果不是字符串，尝试直接创建日期对象
+        date = new Date(dateStr);
+      }
+      
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        console.error('无效的日期:', dateStr);
+        return '-';
+      }
+      
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      
+      switch (type) {
+        case 'day':
+          return `${year}年${month}月${day}日`;
+        case 'week':
+          return `${year}年第${this.getWeekNumber(date)}周`;
+        case 'month':
+          return `${year}年${month}月`;
+        case 'year':
+          return `${year}年`;
+        default:
+          return `${year}年${month}月${day}日`;
+      }
+    },
+    
+    // 格式化日期显示 (yyyy-MM-dd)
+    formatDate(date) {
+      if (!date) return '-';
+      if (typeof date === 'string') {
+        // 如果已经是字符串格式，检查是否需要截取
+        if (date.includes('T') || date.includes(' ')) {
+          // 处理ISO格式或带时间的日期字符串
+          return date.split('T')[0].split(' ')[0];
+        }
+        return date;
+      }
+      
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
+    
+    // 格式化汇总日期显示
+    formatSummaryDate(date, type) {
+      if (!date) return '-';
+      
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
       
       switch (type) {
         case 'day':
           return `${year}-${month}-${day}`;
         case 'week':
-          return `${year}年第${this.getWeekNumber(date)}周`;
+          return `${year}年第${this.getWeekNumber(d)}周`;
         case 'month':
           return `${year}-${month}`;
         case 'year':
-          return `${year}`;
+          return `${year}年`;
         default:
-          return dateStr;
+          return `${year}-${month}-${day}`;
       }
     },
     
-    // 获取周数
+    // 获取日期是一年中的第几周
     getWeekNumber(date) {
       const d = new Date(date);
       d.setHours(0, 0, 0, 0);

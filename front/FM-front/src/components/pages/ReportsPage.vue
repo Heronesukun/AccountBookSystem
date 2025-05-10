@@ -3,22 +3,7 @@
       <el-card class="reports-card">
         <div class="reports-header">
           <h2>报表管理</h2>
-          <div class="filter-container">
-            <el-date-picker
-              v-model="selectedYear"
-              type="year"
-              placeholder="选择年份"
-              @change="handleYearChange"
-            />
-            <el-date-picker
-              v-model="selectedMonth"
-              type="month"
-              placeholder="选择月份"
-              format="YYYY-MM"
-              value-format="YYYY-MM"
-              @change="handleMonthChange"
-            />
-          </div>
+
         </div>
   
         <el-tabs v-model="activeTab" @tab-click="handleTabClick">
@@ -76,14 +61,7 @@
                 </el-col>
               </el-row>
   
-              <el-row :gutter="20" class="chart-row">
-                <el-col :span="24">
-                  <el-card class="chart-card">
-                    <div class="chart-title">月度收支情况 ({{ selectedYear }}年)</div>
-                    <div ref="monthlyTrendChart" class="chart trend-chart"></div>
-                  </el-card>
-                </el-col>
-              </el-row>
+
             </div>
           </el-tab-pane>
   
@@ -110,14 +88,7 @@
           <!-- 账户页签 -->
           <el-tab-pane label="账户" name="account">
             <div class="account-container">
-              <el-row :gutter="20">
-                <el-col :span="24">
-                  <el-card class="chart-card">
-                    <div class="chart-title">净资产趋势</div>
-                    <div ref="netWorthChart" class="chart trend-chart"></div>
-                  </el-card>
-                </el-col>
-              </el-row>
+
   
               <el-row :gutter="20" class="account-details-row">
                 <el-col :span="12">
@@ -237,16 +208,21 @@
     fetchData();
   });
   
-  // 处理标签页切换
-  const handleTabClick = (tab) => {
-    if (tab.props.name === 'basic') {
-      fetchBasicData();
-    } else if (tab.props.name === 'category') {
-      fetchCategoryData();
-    } else if (tab.props.name === 'account') {
-      fetchAccountData();
-    }
-  };
+// 处理标签页切换
+const handleTabClick = (tab) => {
+  if (tab.props.name === 'basic') {
+    fetchBasicData();
+  } else if (tab.props.name === 'category') {
+    fetchCategoryData();
+    // 添加延迟以确保DOM已渲染
+    setTimeout(() => {
+      initIncomeCategoryChart();
+      initExpenseCategoryChart();
+    }, 100);
+  } else if (tab.props.name === 'account') {
+    fetchAccountData();
+  }
+};
   
   // 处理年份变化
   const handleYearChange = () => {
@@ -748,99 +724,117 @@ expenseCategoryData.value = Object.entries(expenseByCategory)
     monthlyTrendChartInstance.setOption(option);
   };
   
-  // 初始化收入分类图表
-  const initIncomeCategoryChart = () => {
-    if (!incomeCategoryChart.value) return;
-    
-    if (!incomeCategoryChartInstance) {
-      incomeCategoryChartInstance = echarts.init(incomeCategoryChart.value);
-    }
-    
-    const option = {
-      tooltip: {
-        trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
-      },
-      legend: {
-        orient: 'vertical',
-        left: 10,
-        data: incomeCategoryData.value.map(item => item.name)
-      },
-      series: [
-        {
-          name: '收入分类',
-          type: 'pie',
-          radius: ['50%', '70%'],
-          avoidLabelOverlap: false,
+// 初始化收入分类图表
+const initIncomeCategoryChart = () => {
+  if (!incomeCategoryChart.value) return;
+  
+  // 如果图表实例已存在，先销毁
+  if (incomeCategoryChartInstance) {
+    incomeCategoryChartInstance.dispose();
+  }
+  
+  // 创建新的图表实例
+  incomeCategoryChartInstance = echarts.init(incomeCategoryChart.value);
+  
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 10,
+      data: incomeCategoryData.value.map(item => item.name)
+    },
+    series: [
+      {
+        name: '收入分类',
+        type: 'pie',
+        radius: ['50%', '70%'],
+        avoidLabelOverlap: false,
+        label: {
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
           label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: '18',
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: incomeCategoryData.value
-        }
-      ],
-      color: ['#91cc75', '#5470c6', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
-    };
-    
-    incomeCategoryChartInstance.setOption(option);
+            show: true,
+            fontSize: '18',
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: false
+        },
+        data: incomeCategoryData.value
+      }
+    ],
+    color: ['#91cc75', '#5470c6', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
   };
   
-  // 初始化支出分类图表
-  const initExpenseCategoryChart = () => {
-    if (!expenseCategoryChart.value) return;
-    
-    if (!expenseCategoryChartInstance) {
-      expenseCategoryChartInstance = echarts.init(expenseCategoryChart.value);
-    }
-    
-    const option = {
-      tooltip: {
-        trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
-      },
-      legend: {
-        orient: 'vertical',
-        left: 10,
-        data: expenseCategoryData.value.map(item => item.name)
-      },
-      series: [
-        {
-          name: '支出分类',
-          type: 'pie',
-          radius: ['50%', '70%'],
-          avoidLabelOverlap: false,
+  incomeCategoryChartInstance.setOption(option);
+  
+  // 添加窗口大小变化的监听
+  window.addEventListener('resize', () => {
+    incomeCategoryChartInstance && incomeCategoryChartInstance.resize();
+  });
+};
+  
+// 初始化支出分类图表
+const initExpenseCategoryChart = () => {
+  if (!expenseCategoryChart.value) return;
+  
+  // 如果图表实例已存在，先销毁
+  if (expenseCategoryChartInstance) {
+    expenseCategoryChartInstance.dispose();
+  }
+  
+  // 创建新的图表实例
+  expenseCategoryChartInstance = echarts.init(expenseCategoryChart.value);
+  
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 10,
+      data: expenseCategoryData.value.map(item => item.name)
+    },
+    series: [
+      {
+        name: '支出分类',
+        type: 'pie',
+        radius: ['50%', '70%'],
+        avoidLabelOverlap: false,
+        label: {
+          show: false,
+          position: 'center'
+        },
+        emphasis: {
           label: {
-            show: false,
-            position: 'center'
-          },
-          emphasis: {
-            label: {
-              show: true,
-              fontSize: '18',
-              fontWeight: 'bold'
-            }
-          },
-          labelLine: {
-            show: false
-          },
-          data: expenseCategoryData.value
-        }
-      ],
-      color: ['#ee6666', '#fac858', '#5470c6', '#91cc75', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
-    };
-    
-    expenseCategoryChartInstance.setOption(option);
+            show: true,
+            fontSize: '18',
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: false
+        },
+        data: expenseCategoryData.value
+      }
+    ],
+    color: ['#ee6666', '#fac858', '#5470c6', '#91cc75', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
   };
+  
+  expenseCategoryChartInstance.setOption(option);
+  
+  // 添加窗口大小变化的监听
+  window.addEventListener('resize', () => {
+    expenseCategoryChartInstance && expenseCategoryChartInstance.resize();
+  });
+};
   
 // 初始化净资产趋势图表
 const initNetWorthChart = () => {
