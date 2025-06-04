@@ -3,14 +3,14 @@ server:
 
 spring:
   redis:
-    host: 47.98.59.0
-    port: 6379
-    password: hanbing147@A
+    host: 
+    port: 
+    password: 
   datasource:
     druid:
-      username: root
-      password: hanbing147@A
-      url: jdbc:mysql://47.98.59.0:3306/fm_project
+      username:
+      password: 
+      url: 
       driver-class-name: com.mysql.cj.jdbc.Driver
 mybatis:
   type-aliases-package: com.fm.pojo
@@ -21,4 +21,4 @@ mybatis:
 
 
 ### JWT
-jwt-secret: xieyibeizichengxv4321
+jwt-secret: 
